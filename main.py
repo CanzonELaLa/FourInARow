@@ -134,11 +134,21 @@ class GUI:
                                 if not self.__board.add_chip(5, "second"):
                                     self.__board.add_chip(6, "first")
 
+        def create_add_chip_func(i):
+            def add_chip_func():
+                return self.__board.add_chip(i, "first")
+            return add_chip_func
+
         for i in range(7):
             button = t.Button(self._parent)
             button.config(image=self.__board.red_piece, width=94, height=94)
             self.__column_buttons.append(button)
-            button.config(command=lambda: self.__board.add_chip(i, "first"))
+            button.config(command=create_add_chip_func(i))
+            original_color = button.cget("background")
+            button.bind("<Enter>", lambda event, h=button: h.configure(
+                bg="red"))
+            button.bind("<Leave>", lambda event, h=button: h.configure(
+                bg=original_color))
             button.place(x=DELTA_WIDTH + CELL_PADDING +
                            (CELL_PADDING - 2)*i + DELTA_CELL*i,
                          y=10)
