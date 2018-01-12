@@ -10,6 +10,12 @@ CELL_PADDING = 13
 DEFAULT_STATE = "EMPTY"
 FIRST_PLAYER = "Images/Red.gif"
 SECOND_PLAYER = "Images/Blue.gif"
+YOUR_TURN = "Images/Your turn.gif"
+ENEMY_TURN = "Images/Enemy turn.gif"
+BOARD_IMAGE = "Images/Board.gif"
+BG_IMAGE = "Images/bg.gif"
+WIN_LABEL = "Images/You win.gif"
+LOSE_LABEL = "Images/You lose.gif"
 
 
 class Cell:
@@ -43,9 +49,9 @@ class Board:
             column = []
             for j in range(6):
                 column.append(Cell((DELTA_WIDTH + CELL_PADDING +
-                                    (CELL_PADDING - 2)*i + DELTA_CELL*i,
+                                    (CELL_PADDING - 2) * i + DELTA_CELL * i,
                                     DELTA_HEIGHT + CELL_PADDING +
-                                    (CELL_PADDING - 2)*j + DELTA_CELL*j),
+                                    (CELL_PADDING - 2) * j + DELTA_CELL * j),
                                    self))
             column.reverse()
             self.__columns.append(column)
@@ -111,57 +117,109 @@ class GUI:
         :param server: true if the communicator is a server, otherwise false.
         """
         self._parent = parent
-        self._canvas = t.Canvas(self._parent, width=1200, height=850)
+        self._canvas = t.Canvas(self._parent, width=1200, height=860)
         self._canvas.pack()
-        self.__bg = t.PhotoImage(file="Images/Board.gif")
-        self._canvas.create_image(DELTA_WIDTH, DELTA_HEIGHT, image=self.__bg,
-                                  anchor="nw")
+        # self.__board_image = t.PhotoImage(file=BOARD_IMAGE)
+        # self._canvas.create_image(DELTA_WIDTH, DELTA_HEIGHT,
+        #                           image=self.__board_image, anchor="nw")
+        self.__bg = t.PhotoImage(file=BG_IMAGE)
+        self._canvas.create_image(0, 0, image=self.__bg, anchor="nw")
         self.__board = Board(self._canvas)
         self.__communicator = Communicator(parent, port, ip)
         self.__communicator.connect()
         self.__communicator.bind_action_to_message(self.__handle_message)
         self.__column_buttons = []
+        self.__column_buttons_flag = True
+        self.__column_button_images = [t.PhotoImage(file="Images/button" +
+                                                         str(x) + ".gif")
+                                       for x in
+                                       range(1,8)]
+        self.__labels = {}
+        self.__labels["Your Turn"] = t.PhotoImage(file=YOUR_TURN)
+        self.__labels["Enemy Turn"] = t.PhotoImage(file=ENEMY_TURN)
+        self.__labels["You Win"] = t.PhotoImage(file=WIN_LABEL)
+        self.__labels["You Lose"] = t.PhotoImage(file=LOSE_LABEL)
+        self.__your_label = None
+        self.__enemy_label = None
         self.__place_widgets()
 
     def __place_widgets(self):
-        def add_chip():
-            self.__communicator.send_message("YO")
-            if not self.__board.add_chip(0, "first"):
-                if not self.__board.add_chip(1, "second"):
-                    if not self.__board.add_chip(2, "first"):
-                        if not self.__board.add_chip(3, "second"):
-                            if not self.__board.add_chip(4, "first"):
-                                if not self.__board.add_chip(5, "second"):
-                                    self.__board.add_chip(6, "first")
-
         def create_add_chip_func(i):
             def add_chip_func():
+                self.__toggle_column_buttons()
                 return self.__board.add_chip(i, "first")
+
             return add_chip_func
 
+        self.__button_image = t.PhotoImage(file=FIRST_PLAYER)
+        self.__button1_image = t.PhotoImage(file="Images/button1.gif")
         for i in range(7):
             button = t.Button(self._parent)
-            button.config(image=self.__board.red_piece, width=94, height=94)
+            button.config(image=self.__column_button_images[i], width=94,
+                          height=94)
+            button.config(borderwidth=0)
             self.__column_buttons.append(button)
             button.config(command=create_add_chip_func(i))
-            original_color = button.cget("background")
-            button.bind("<Enter>", lambda event, h=button: h.configure(
-                bg="red"))
-            button.bind("<Leave>", lambda event, h=button: h.configure(
-                bg=original_color))
             button.place(x=DELTA_WIDTH + CELL_PADDING +
-                           (CELL_PADDING - 2)*i + DELTA_CELL*i,
+                           (CELL_PADDING - 2) * i + DELTA_CELL * i + 2,
                          y=10)
 
+        # self.__button = t.Button(self._parent, text="YO",
+        #                          font=("Garamond", 20, "bold"),
+        #                          command=lambda:
+        #                          self.__communicator.send_message("YO"))
         self.__button = t.Button(self._parent, text="YO",
                                  font=("Garamond", 20, "bold"),
-                                 command=add_chip)
-        self.__button.pack()
-        self.__button.place(x=180, y=120)
-        self.__label = t.Label(self._parent, text="", fg="red",
-                               font=("Garamond", 40, "bold"))
-        self.__label.pack()
-        self.__label.place(x=109, y=200)
+                                 command=self.__toggle_column_buttons)
+        self.__win_button = t.Button(self._parent, text="win",
+                                     command=self.__show_win)
+        self.__lose_button = t.Button(self._parent, text="lose",
+                                      command=self.__show_lose)
+
+        # self.__button.pack()
+        # self.__button.place(x=0, y=0)
+        self.__win_button.place(x=0, y=0)
+        self.__lose_button.place(x=0, y=30)
+
+    def __show_win(self):
+        self._canvas.create_image(600, 430, image=self.__labels["You Win"],
+                                  anchor="center")
+
+    def __show_lose(self):
+        self._canvas.create_image(600, 430, image=self.__labels["You Lose"],
+                                  anchor="center")
+
+    def __toggle_column_buttons(self):
+        def remove_enemy_label():
+            self._canvas.delete(self.__enemy_label)
+            self.__enemy_label = None
+
+        def remove_your_label():
+            self._canvas.delete(self.__your_label)
+            self.__your_label = None
+
+        if self.__column_buttons_flag:
+            if self.__your_label:
+                self._canvas.delete(self.__your_label)
+            self.__column_buttons_flag = False
+            for button in self.__column_buttons:
+                button.config(state="disabled")
+            self.__enemy_label = \
+                self._canvas.create_image(600, 430, image=self.__labels[
+                    "Enemy Turn"], anchor="center")
+            self._parent.after(1500,
+                               lambda: remove_enemy_label())
+        else:
+            if self.__enemy_label:
+                self._canvas.delete(self.__enemy_label)
+            self.__column_buttons_flag = True
+            for button in self.__column_buttons:
+                button.config(state="active")
+            self.__your_label = \
+                self._canvas.create_image(600, 430, image=self.__labels[
+                    "Your Turn"], anchor="center")
+            self._parent.after(1500,
+                               lambda: remove_your_label())
 
     def __handle_message(self, text=None):
         """
