@@ -176,20 +176,32 @@ class GUI:
         self.__lose_button = t.Button(self._parent, text="lose",
                                       command=self.__show_lose)
 
-        self.__button.pack()
-        # self.__button.place(x=0, y=0)
-        # self.__win_button.place(x=0, y=0)
-        # self.__lose_button.place(x=0, y=30)
+        # self.__button.pack()
+        self.__button.place(x=0, y=60)
+        self.__win_button.place(x=0, y=0)
+        self.__lose_button.place(x=0, y=30)
 
     def __show_win(self):
+        for button in self.__column_buttons:
+            button.config(state="disabled")
+        if self.__your_label:
+            self._canvas.delete(self.__your_label)
+        if self.__enemy_label:
+            self._canvas.delete(self.__enemy_label)
         self._canvas.create_image(600, 430, image=self.__labels["You Win"],
                                   anchor="center")
 
     def __show_lose(self):
+        for button in self.__column_buttons:
+            button.config(state="disabled")
+        if self.__your_label:
+            self._canvas.delete(self.__your_label)
+        if self.__enemy_label:
+            self._canvas.delete(self.__enemy_label)
         self._canvas.create_image(600, 430, image=self.__labels["You Lose"],
                                   anchor="center")
 
-    def __toggle_column_buttons(self):
+    def __toggle_column_buttons(self, flag=None):
         def remove_enemy_label():
             self._canvas.delete(self.__enemy_label)
             self.__enemy_label = None
@@ -197,6 +209,9 @@ class GUI:
         def remove_your_label():
             self._canvas.delete(self.__your_label)
             self.__your_label = None
+
+        if flag is not None:
+            self.__column_buttons_flag = flag
 
         if self.__column_buttons_flag:
             if self.__your_label:
