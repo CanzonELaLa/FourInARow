@@ -53,14 +53,14 @@ class Board:
                                     DELTA_HEIGHT + CELL_PADDING +
                                     (CELL_PADDING - 2) * j + DELTA_CELL * j),
                                    self))
-            column.reverse()
+            # column.reverse()
             self.__columns.append(column)
 
     def add_chip(self, column, player):
         if self.__columns is None:
             return False
         row = -1
-        for i in range(len(self.__columns[column])):
+        for i in range(len(self.__columns[column]) - 1, 0, -1):
             if self.__columns[column][i].get_chip().get_player() == \
                     DEFAULT_STATE:
                 row = i
@@ -176,10 +176,10 @@ class GUI:
         self.__lose_button = t.Button(self._parent, text="lose",
                                       command=self.__show_lose)
 
-        # self.__button.pack()
+        self.__button.pack()
         # self.__button.place(x=0, y=0)
-        self.__win_button.place(x=0, y=0)
-        self.__lose_button.place(x=0, y=30)
+        # self.__win_button.place(x=0, y=0)
+        # self.__lose_button.place(x=0, y=30)
 
     def __show_win(self):
         self._canvas.create_image(600, 430, image=self.__labels["You Win"],
