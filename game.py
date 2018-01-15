@@ -10,6 +10,7 @@ class Game:
     def __init__(self):
         self.__board = Board()
         # TODO:: figure out who goes first
+        # Changes immediatly if this is the client side
         self.__current_player = self.PLAYER_ONE
         self.__canvas = None
 

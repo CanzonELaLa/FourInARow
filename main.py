@@ -46,7 +46,7 @@ class GUI:
         #                           image=self.__board_image, anchor="nw")
         self.__bg = t.PhotoImage(file=BG_IMAGE)
         self._canvas.create_image(0, 0, image=self.__bg, anchor="nw")
-        self.__board = Board()
+        # self.__board = Board()
         # self.__communicator = Communicator(parent, port, ip)
         # self.__communicator.connect()
         # self.__communicator.bind_action_to_message(self.__handle_message)
@@ -66,6 +66,8 @@ class GUI:
         self.__place_widgets()
         self.__game = Game()
         self.__game.set_canvas(self._canvas)
+        if ip is not None:
+            self.__game.set_current_player(self.__game.PLAYER_TWO)
 
     def __place_widgets(self):
         def create_add_chip_func(i):
