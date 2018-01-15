@@ -66,6 +66,7 @@ class GUI:
         self.__place_widgets()
         self.__game = Game()
         self.__game.set_canvas(self._canvas)
+        self.__game.set_gui(self)
         if ip is not None:
             self.__game.set_current_player(self.__game.PLAYER_TWO)
             self.__game.set_player(self.__game.PLAYER_TWO)
@@ -78,7 +79,7 @@ class GUI:
                 #                                      self._canvas)
                 success = self.__game.make_move(i)
                 # Disable buttons
-                self.toggle_column_buttons(False)
+                # self.toggle_column_buttons(False)
                 return success
 
             return add_chip_func
@@ -90,7 +91,7 @@ class GUI:
             # else:
             #     self.__game.set_current_player(game.Game.PLAYER_ONE)
             self.__make_random_move()
-            self.toggle_column_buttons(True)
+            # self.toggle_column_buttons(True)
 
         for i in range(7):
             button = t.Button(self._parent)
