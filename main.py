@@ -68,21 +68,28 @@ class GUI:
         self.__game.set_canvas(self._canvas)
         if ip is not None:
             self.__game.set_current_player(self.__game.PLAYER_TWO)
+            self.__game.set_player(self.__game.PLAYER_TWO)
 
     def __place_widgets(self):
         def create_add_chip_func(i):
             def add_chip_func():
-                success = \
-                    self.__game.get_board().add_chip(i, game.Game.PLAYER_ONE,
-                                                     self._canvas)
-                self.toggle_column_buttons()
+                # success = \
+                #     self.__game.get_board().add_chip(i, game.Game.PLAYER_ONE,
+                #                                      self._canvas)
+                success = self.__game.make_move(i)
+                # Disable buttons
+                self.toggle_column_buttons(False)
                 return success
 
             return add_chip_func
 
         # do yo thing
         def yo_things():
-            self.toggle_column_buttons()
+            # if self.__game.get_current_player() == game.Game.PLAYER_ONE:
+            #     self.__game.set_current_player(game.Game.PLAYER_TWO)
+            # else:
+            #     self.__game.set_current_player(game.Game.PLAYER_ONE)
+            self.toggle_column_buttons(True)
             self.__make_random_move()
 
         for i in range(7):
@@ -133,11 +140,8 @@ class GUI:
                                   image=self.__labels_images["You Lose"],
                                   anchor=CENTER_ANCHOR)
 
-    def toggle_column_buttons(self):
-        if not self.__game.get_current_player():  # Implicit int -> bool
-            # conversion
-            assert self.__game.get_current_player() == 0
-
+    def toggle_column_buttons(self, activate):
+        if not activate:
             # Remove other label if it is still present
             self._canvas.delete(self.__your_label)
             for button in self.__column_buttons:
@@ -178,9 +182,14 @@ class GUI:
 
     def __make_random_move(self):
         col = randint(0, 6)
-        while not self.__game.get_board().add_chip(col, game.Game.PLAYER_TWO,
-                                                   self._canvas):
-            col = randint(0, 6)
+        # while not self.__game.get_board().add_chip(col, game.Game.PLAYER_ONE,
+        #                                            self.__game):
+        while col >= 0:
+            try:
+                self.__game.make_move(col)
+                col = -1
+            except:
+                col = randint(0, 6)
 
 
 if __name__ == '__main__':

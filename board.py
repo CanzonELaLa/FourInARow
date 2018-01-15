@@ -6,7 +6,7 @@ DEFAULT_STATE = "EMPTY"
 
 class Cell:
     def __init__(self, location, board):
-        self.__chip = Chip(DEFAULT_STATE)
+        self.__chip = Chip(None)
         self.__location = location
         self.__board = board
 
@@ -50,33 +50,28 @@ class Board:
             # column.reverse()
             self.__columns.append(column)
 
-    def add_chip(self, column, player, canvas):
+    def add_chip(self, column, player, game):
         # TODO:: User assert on the output of this function
         if self.__columns is None:
             return False
         row = -1
 
         for i in range(Board.BOARD_HEIGHT - 1, 0, -1):
-            if self.__columns[column][i].get_chip().get_player() == \
-                    DEFAULT_STATE:
+            if self.__columns[column][i].get_chip().get_player() is None:
                 row = i
-
                 break
         if row == -1:
             return False
 
         cell = self.__columns[column][row]
 
-        if player == game.Game.PLAYER_ONE:
+        if player == game.get_player():
             chip = self.red_piece
-        elif player == game.Game.PLAYER_TWO:
-            chip = self.blue_piece
         else:
-            chip = None
-            assert False
+            chip = self.blue_piece
 
         self.__set_cell(player, column, row)
-        canvas.create_image(cell.get_location()[0],
+        game.get_canvas().create_image(cell.get_location()[0],
                             cell.get_location()[1], image=chip,
                             anchor=self.NW_ANCHOR)
 

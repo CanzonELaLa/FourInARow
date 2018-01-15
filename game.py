@@ -12,22 +12,30 @@ class Game:
         # TODO:: figure out who goes first
         # Changes immediatly if this is the client side
         self.__current_player = self.PLAYER_ONE
+        self.__player = self.PLAYER_ONE
         self.__canvas = None
 
     def set_canvas(self, canvas):
         self.__canvas = canvas
 
     def make_move(self, column):
-        self.__board.add_chip(column,
+        if self.get_winner() is not None:
+            raise Exception("Illegal move")
+        if not self.__board.add_chip(column,
                               self.PLAYER_ONE if not
                               self.__current_player else self.PLAYER_TWO,
-                              self.__canvas)
+                              self):
+            raise Exception("Illegal move")
+        if self.__current_player == self.PLAYER_ONE:
+            self.__current_player = self.PLAYER_TWO
+        else:
+            self.__current_player = self.PLAYER_ONE
 
     def get_winner(self):
-        pass
+        return None
 
     def get_player_at(self, row, col):
-        pass
+        return self.__board.get_columns()[col][row].get_chip().get_player()
 
     def get_current_player(self):
         # return self.PLAYER_ONE if self.__player_one_turn else self.PLAYER_TWO
@@ -38,3 +46,12 @@ class Game:
 
     def set_current_player(self, player):
         self.__current_player = player
+
+    def set_player(self, player):
+        self.__player = player
+
+    def get_player(self):
+        return self.__player
+
+    def get_canvas(self):
+        return self.__canvas
