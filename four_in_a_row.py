@@ -41,15 +41,15 @@ class GUI:
         self._parent = parent
         self._canvas = t.Canvas(self._parent, width=1200, height=860)
         self._canvas.pack()
-        # self.__board_image = t.PhotoImage(file=BOARD_IMAGE)
-        # self._canvas.create_image(DELTA_WIDTH, DELTA_HEIGHT,
-        #                           image=self.__board_image, anchor="nw")
         self.__bg = t.PhotoImage(file=BG_IMAGE)
         self._canvas.create_image(0, 0, image=self.__bg, anchor="nw")
-        # self.__board = Board()
-        # self.__communicator = Communicator(parent, port, ip)
-        # self.__communicator.connect()
-        # self.__communicator.bind_action_to_message(self.__handle_message)
+
+        # Comuunicator class things
+        self.__communicator = Communicator(parent, port, ip)
+        self.__communicator.connect()
+        self.__communicator.bind_action_to_message(self.__handle_message)
+
+        # UI things
         self.__column_buttons = []
         self.__column_button_images = [t.PhotoImage(file="Images/button" +
                                                          str(x) + ".gif")
@@ -89,8 +89,8 @@ class GUI:
             #     self.__game.set_current_player(game.Game.PLAYER_TWO)
             # else:
             #     self.__game.set_current_player(game.Game.PLAYER_ONE)
-            self.toggle_column_buttons(True)
             self.__make_random_move()
+            self.toggle_column_buttons(True)
 
         for i in range(7):
             button = t.Button(self._parent)
@@ -146,7 +146,6 @@ class GUI:
             self._canvas.delete(self.__your_label)
             for button in self.__column_buttons:
                 button.config(state="disabled")
-            self.__game.set_current_player(self.__game.PLAYER_TWO)
             self.__enemy_label = \
                 self._canvas.create_image(600, 430, image=self.__labels_images[
                     "Enemy Turn"], anchor=CENTER_ANCHOR)
@@ -157,7 +156,6 @@ class GUI:
             self._canvas.delete(self.__enemy_label)
             for button in self.__column_buttons:
                 button.config(state="active")
-            self.__game.set_current_player(self.__game.PLAYER_ONE)
             self.__your_label = \
                 self._canvas.create_image(600, 430, image=self.__labels_images[
                     "Your Turn"], anchor=CENTER_ANCHOR)

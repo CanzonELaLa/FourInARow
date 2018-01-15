@@ -56,7 +56,7 @@ class Board:
             return False
         row = -1
 
-        for i in range(Board.BOARD_HEIGHT - 1, 0, -1):
+        for i in range(Board.BOARD_HEIGHT - 1, -1, -1):
             if self.__columns[column][i].get_chip().get_player() is None:
                 row = i
                 break

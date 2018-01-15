@@ -19,6 +19,10 @@ class Game:
         self.__canvas = canvas
 
     def make_move(self, column):
+        if self.__current_player == 0:
+            print("server side")
+        else:
+            print("client side")
         if self.get_winner() is not None:
             raise Exception("Illegal move")
         if not self.__board.add_chip(column,
