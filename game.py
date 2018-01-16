@@ -226,9 +226,10 @@ class GUI:
     def disable_illegal_button(self, col):
         self.__column_buttons[col].config(state="disabled")
 
-    def color_winning_chips(self, player, data, board):
-        if data[2]:  # TODO:: This is only because I have yet to implement diagonal checking!
-            for x, y in data[2]:
+    def color_winning_chips(self, player, chips, board):
+        if chips:  # TODO:: This is only because I have yet to implement
+            # diagonal checking!
+            for x, y in chips:
                 cell = board.get_cell_at(x, y)
                 self.create_chip_on_board(cell.get_location()[0],
                                           cell.get_location()[1], player, True)
@@ -254,6 +255,9 @@ class Game:
                              self.__gui.create_chip_on_board)
         self.__win_checker = WinSearch()
 
+        # TODO:: Ugly code, find a workaround
+        self.__last_inserted_chip = None
+
         self.__gui.get_root().mainloop()
 
     def __make_move(self, column):
@@ -268,41 +272,39 @@ class Game:
         if not success:
             raise Exception("Illegal move")
 
-        print(self.__find_connected(column, row))
+        self.__last_inserted_chip = column, row
 
-        winner = self.get_winner()
+        # print(self.__find_connected_and_winner(column, row))
+
+        # winner = self.get_winner()
+        winner, winning_chips = self.__find_connected_and_winner(column, row)
+        if winner is None:
+            self.__toggle_player()
+            self.__disable_illegal_columns()
         if winner == self.__player:
             self.__gui.disable_column_buttons()
-            self.__gui.color_winning_chips(self.__player,
-                                           self.__find_connected(column,
-                                                                 row),
+            self.__gui.color_winning_chips(self.__player, winning_chips,
                                            self.__board)
             self.__gui.show_win()
         elif winner == self.__enemy_player:
             self.__gui.disable_column_buttons()
-            self.__gui.color_winning_chips(self.__player,
-                                           self.__find_connected(column,
-                                                                 row),
+            self.__gui.color_winning_chips(self.__player, winning_chips,
                                            self.__board)
             self.__gui.show_lose()
         elif winner is self.DRAW:
             self.__gui.disable_column_buttons()
             self.__gui.show_draw()
-        elif winner is None:
-            self.__toggle_player()
-            self.__disable_illegal_columns()
 
-    def __find_connected(self, column, row):
+    def __find_connected_and_winner(self, column, row):
         columns = self.__board.get_columns()
         # Check column
         lst = []
         for j in range(row, min(row + 4, len(columns[column]))):
             if columns[column][j] == self.__current_player:
-                lst.append(1)
+                lst.append((column, j))
 
         if len(lst) == 4:
-            return (True, self.__current_player, [(column, j) for j in range(
-                                                    row, row + 4)])
+            return self.__current_player, lst
 
         # Check row
         rows = self.__win_checker.transpose_matrix(self.__board.get_columns())
@@ -315,23 +317,34 @@ class Game:
                     break
 
             if flag:
-                return (True, self.__current_player, [(k, row) for k in
-                                                     range(j, j + 4)])
-
+                return self.__current_player, [(k, row) for k in
+                                                     range(j, j + 4)]
 
         # Check diagonal
-        # flag =
-        # for indices_diff in range(len(rows) - 1, -len(columns), -1):
-        #     for i in range(len(rows)):
-        #         for j in range(len(columns)):
-        #             if indices_diff == i - j:
-        #
-        #      [matrix[i][j]
+        for indices_diff in range(len(rows) - 1, -len(columns), -1):
+            lst = []
+            for i in range(len(rows)):
+                for j in range(len(columns)):
+                    if indices_diff == i - j and \
+                            columns[j][i] == self.__current_player:
+                        lst.append((j, i))
 
-             # Check antidiagonal
+                if len(lst) == 4:
+                    return self.__current_player, lst
 
+        # Check antidiagonal
+        for indices_sum in range(len(rows) + len(columns) - 1):
+            lst = []
+            for i in range(len(rows)):
+                for j in range(len(columns)):
+                    if indices_sum == i + j and \
+                            columns[j][i] == self.__current_player:
+                        lst.append((j, i))
 
-        return False, None, None
+                if len(lst) == 4:
+                    return self.__current_player, lst
+
+        return None, None
 
     def __disable_illegal_columns(self):
         columns = self.__board.get_columns()
@@ -364,15 +377,17 @@ class Game:
         self.__gui.toggle_column_buttons(flag)
 
     def get_winner(self):
-        board_columns = self.__board.get_columns_as_str()
-        winner = self.__win_checker.get_winner_from_columns(board_columns)
-        if winner is not None:
-            return winner
-        else:
-            if self.check_draw():
-                return self.DRAW
-
-        return None
+        # board_columns = self.__board.get_columns_as_str()
+        # winner = self.__win_checker.get_winner_from_columns(board_columns)
+        # if winner is not None:
+        #     return winner
+        # else:
+        #     if self.check_draw():
+        #         return self.DRAW
+        #
+        # return None
+        return self.__find_connected_and_winner(
+            self.__last_inserted_chip[0], self.__last_inserted_chip[1])[0]
 
     def get_player_at(self, row, col):
         return self.__board.get_columns()[col][row]  # .get_chip_owner()
@@ -404,7 +419,7 @@ class Game:
 
 
 class WinSearch:
-    # Repurposed code from ex5
+    # Re-purposed code from ex5
 
     EMPTY_STRING = ""
 
