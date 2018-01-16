@@ -28,3 +28,18 @@ Rank each tuple in list according to the following formula:
 rank = sequence_length + (4 - steps_to_completion_of_sequence)
 
 steps_to_completion_of_sequence will be calculated by predicting
+
+
+
+def backtrack():
+    def helper(columns, ranking_dict, depth):
+        # Recursive function
+        # Base: reached depth or win achieved
+        # Try every move until depth
+        # Rank each possibility by 3 * num of len 3 + 2 * num of len 2 etc.
+        # Give score of +1000 if it achieved a win
+        # Return a dict with keys being first move to make (column), and values being
+        # score of each path
+
+    dct = helper()
+    # Get best key with best score from dict
