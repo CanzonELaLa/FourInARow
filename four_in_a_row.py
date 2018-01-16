@@ -26,7 +26,7 @@ if __name__ == '__main__':
     #     root.title("Client")
     # root.mainloop()
     if (len(argv) == 4 or len(argv) == 3) and 0 <= int(argv[2]) <= 65535:
-        port = argv[2]
+        port = int(argv[2])
         ai = True if argv[1] == "ai" else False
 
         game = Game()
@@ -40,4 +40,5 @@ if __name__ == '__main__':
         commune.bind_action_to_message(game.eat_message)
 
     else:
+        # TODO:: Write actual error message
         print("error")

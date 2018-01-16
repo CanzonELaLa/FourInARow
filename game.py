@@ -8,11 +8,14 @@ DELTA_CELL = 109
 CELL_PADDING = 13
 FIRST_PLAYER = "Images/Red.gif"
 SECOND_PLAYER = "Images/Blue.gif"
+FIRST_PLAYER_WIN_IMAGE = "Images/Red_glow.gif"
+SECOND_PLAYER_WIN_IMAGE = "Images/Blue_glow.gif"
 YOUR_TURN = "Images/Your turn.gif"
 ENEMY_TURN = "Images/Enemy turn.gif"
 BG_IMAGE = "Images/bg.gif"
 WIN_LABEL = "Images/You win.gif"
 LOSE_LABEL = "Images/You lose.gif"
+DRAW_LABEL = "Images/Draw.gif"
 CENTER_ANCHOR = "center"
 NW_ANCHOR = "nw"
 WIN_STATES = ["0000", "1111"]
@@ -33,8 +36,6 @@ class GUI:
         """
         self.__root = t.Tk()
         self.__root.resizable(width=False, height=False)
-
-        self.__game = game
         self._canvas = t.Canvas(self.__root, width=1200, height=860)
         self._canvas.pack()
         self.__bg = t.PhotoImage(file=BG_IMAGE)
@@ -53,10 +54,12 @@ class GUI:
         self.__labels_images["Enemy Turn"] = t.PhotoImage(file=ENEMY_TURN)
         self.__labels_images["You Win"] = t.PhotoImage(file=WIN_LABEL)
         self.__labels_images["You Lose"] = t.PhotoImage(file=LOSE_LABEL)
-
+        self.__labels_images["Draw"] = t.PhotoImage(file=DRAW_LABEL)
 
         self.red_piece = t.PhotoImage(file=FIRST_PLAYER)
         self.blue_piece = t.PhotoImage(file=SECOND_PLAYER)
+        self.red_piece_glowing = t.PhotoImage(file=FIRST_PLAYER_WIN_IMAGE)
+        self.blue_piece_glowing = t.PhotoImage(file=SECOND_PLAYER_WIN_IMAGE)
 
         # TODO:: Refactor to dictionary
         self.__your_label = None
@@ -136,6 +139,14 @@ class GUI:
                                   image=self.__labels_images["You Lose"],
                                   anchor=CENTER_ANCHOR)
 
+    def show_draw(self):
+        self.disable_column_buttons()
+        self._canvas.delete(self.__your_label)
+        self._canvas.delete(self.__enemy_label)
+        self._canvas.create_image(600, 430,
+                                  image=self.__labels_images["Draw"],
+                                  anchor=CENTER_ANCHOR)
+
     def disable_column_buttons(self):
         for button in self.__column_buttons:
             button.config(state="disabled")
@@ -149,7 +160,7 @@ class GUI:
                 self._canvas.create_image(600, 430, image=self.__labels_images[
                     "Enemy Turn"], anchor=CENTER_ANCHOR)
             self.__root.after(1500,
-                               lambda: self._canvas.delete(self.__enemy_label))
+                              lambda: self._canvas.delete(self.__enemy_label))
         else:
             # Remove other label if it is still present
             self._canvas.delete(self.__enemy_label)
@@ -159,7 +170,8 @@ class GUI:
                 self._canvas.create_image(600, 430, image=self.__labels_images[
                     "Your Turn"], anchor=CENTER_ANCHOR)
             self.__root.after(1500,
-                               lambda: self._canvas.delete(self.__your_label))
+                              lambda: self._canvas.delete(self.__your_label))
+
     #
     # def __handle_message(self, text=None):
     #     """
@@ -194,11 +206,17 @@ class GUI:
     def get_canvas(self):
         return self._canvas
 
-    def create_chip_on_board(self, x, y, current_player):
-        if current_player == self.__player:
-            chip = self.red_piece
+    def create_chip_on_board(self, x, y, current_player, win=False):
+        if win:
+            if current_player == self.__player:
+                chip = self.red_piece_glowing
+            else:
+                chip = self.blue_piece_glowing
         else:
-            chip = self.blue_piece
+            if current_player == self.__player:
+                chip = self.red_piece
+            else:
+                chip = self.blue_piece
 
         self._canvas.create_image(x, y, image=chip,
                                   anchor=NW_ANCHOR)
@@ -208,6 +226,12 @@ class GUI:
     def disable_illegal_button(self, col):
         self.__column_buttons[col].config(state="disabled")
 
+    def color_winning_chips(self, player, data, board):
+        if data[2]:  # TODO:: This is only because I have yet to implement diagonal checking!
+            for x, y in data[2]:
+                cell = board.get_cell_at(x, y)
+                self.create_chip_on_board(cell.get_location()[0],
+                                          cell.get_location()[1], player, True)
 
 class Game:
     PLAYER_ONE = 0
@@ -225,7 +249,6 @@ class Game:
             self.__player = self.PLAYER_TWO
             self.__enemy_player = self.PLAYER_ONE
 
-
         self.__gui = GUI(self.__player, self.__make_move)
         self.__board = Board(self.__gui.get_canvas(),
                              self.__gui.create_chip_on_board)
@@ -238,25 +261,77 @@ class Game:
         #     print("server side")
         # else:
         #     print("client side")
-
-        if not self.__board.add_chip(column,
-                                     self.PLAYER_ONE if not
-                                     self.__current_player else self.PLAYER_TWO):
+        success, row = self.__board.add_chip(column,
+                                             self.PLAYER_ONE if not
+                                             self.__current_player else
+                                             self.PLAYER_TWO)
+        if not success:
             raise Exception("Illegal move")
+
+        print(self.__find_connected(column, row))
 
         winner = self.get_winner()
         if winner == self.__player:
             self.__gui.disable_column_buttons()
+            self.__gui.color_winning_chips(self.__player,
+                                           self.__find_connected(column,
+                                                                 row),
+                                           self.__board)
             self.__gui.show_win()
         elif winner == self.__enemy_player:
             self.__gui.disable_column_buttons()
+            self.__gui.color_winning_chips(self.__player,
+                                           self.__find_connected(column,
+                                                                 row),
+                                           self.__board)
             self.__gui.show_lose()
         elif winner is self.DRAW:
             self.__gui.disable_column_buttons()
-            # self.__gui.show_draw()
+            self.__gui.show_draw()
         elif winner is None:
             self.__toggle_player()
             self.__disable_illegal_columns()
+
+    def __find_connected(self, column, row):
+        columns = self.__board.get_columns()
+        # Check column
+        lst = []
+        for j in range(row, min(row + 4, len(columns[column]))):
+            if columns[column][j] == self.__current_player:
+                lst.append(1)
+
+        if len(lst) == 4:
+            return (True, self.__current_player, [(column, j) for j in range(
+                                                    row, row + 4)])
+
+        # Check row
+        rows = self.__win_checker.transpose_matrix(self.__board.get_columns())
+
+        for j in range(len(rows[row]) - 3):
+            flag = True
+            for i in range(4):
+                if rows[row][j + i] != self.__current_player:
+                    flag = False
+                    break
+
+            if flag:
+                return (True, self.__current_player, [(k, row) for k in
+                                                     range(j, j + 4)])
+
+
+        # Check diagonal
+        # flag =
+        # for indices_diff in range(len(rows) - 1, -len(columns), -1):
+        #     for i in range(len(rows)):
+        #         for j in range(len(columns)):
+        #             if indices_diff == i - j:
+        #
+        #      [matrix[i][j]
+
+             # Check antidiagonal
+
+
+        return False, None, None
 
     def __disable_illegal_columns(self):
         columns = self.__board.get_columns()
@@ -268,7 +343,6 @@ class Game:
                     break
             if illegal_column:
                 self.__gui.disable_illegal_button(i)
-
 
     def check_draw(self):
         board_columns = self.__board.get_columns()
@@ -300,9 +374,8 @@ class Game:
 
         return None
 
-
     def get_player_at(self, row, col):
-        return self.__board.get_columns()[col][row]#.get_chip_owner()
+        return self.__board.get_columns()[col][row]  # .get_chip_owner()
 
     def get_current_player(self):
         # return self.PLAYER_ONE if self.__player_one_turn else self.PLAYER_TWO
@@ -329,6 +402,7 @@ class Game:
     def get_root(self):
         return self.__gui.get_root()
 
+
 class WinSearch:
     # Repurposed code from ex5
 
@@ -346,7 +420,6 @@ class WinSearch:
         # Create the list using comprehension
         return [self.EMPTY_STRING.join(row if not reverse else row[::-1])
                 for row in matrix]
-
 
     def transpose_matrix(self, matrix):
         """ :param matrix: Matrix to transpose
@@ -456,7 +529,7 @@ class WinSearch:
 
     def get_winner_from_columns(self, columns):
         winner = self.get_winner(self.get_directional_strings(columns),
-                               WIN_STATES)
+                                 WIN_STATES)
         return int(winner) if winner is not None else None
 
     # def get_states(self, columns, ):

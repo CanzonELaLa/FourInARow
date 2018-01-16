@@ -57,7 +57,7 @@ class Board:
     def add_chip(self, column, player):
         # TODO:: User assert on the output of this function
         if self.__columns is None:
-            return False
+            return False, -1
         designated_row = -1
 
         for row in range(Board.BOARD_HEIGHT - 1, -1, -1):
@@ -66,7 +66,7 @@ class Board:
                 break
 
         if designated_row == -1:
-            return False
+            return False, -1
 
         cell = self.__columns[column][designated_row]
 
@@ -83,7 +83,7 @@ class Board:
         #                     cell.get_location()[1], image=chip,
         #                     anchor=self.NW_ANCHOR)
 
-        return True
+        return True, designated_row
 
     def __set_cell(self, player, column, row):
         self.__columns[column][row].set_chip_owner(player)
@@ -100,6 +100,9 @@ class Board:
             self.__columns[col]))] for col in range(len(self.__columns))]
 
         return columns
+
+    def get_cell_at(self, col, row):
+        return self.__columns[col][row]
 
     def __repr__(self):
         return self.__columns
