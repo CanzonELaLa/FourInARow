@@ -6,18 +6,24 @@ DEFAULT_STATE = "EMPTY"
 
 class Cell:
     def __init__(self, location, board):
-        self.__chip = Chip(None)
+        self.__chip_owner = game.Game.EMPTY
         self.__location = location
         self.__board = board
 
     def get_location(self):
         return self.__location
 
-    def set_chip(self, player):
-        self.__chip.set_player(player)
+    def set_chip_owner(self, player):
+        self.__chip_owner = player
 
-    def get_chip(self):
-        return self.__chip
+    def get_chip_owner(self):
+        return self.__chip_owner
+
+    def __str__(self):
+        return str(self.__chip_owner)
+
+    def __int__(self):
+        return self.__chip_owner
 
 
 class Board:
@@ -26,17 +32,15 @@ class Board:
     DELTA_WIDTH = 180
     DELTA_CELL = 109
     CELL_PADDING = 13
-    FIRST_PLAYER = "Images/Red.gif"
-    SECOND_PLAYER = "Images/Blue.gif"
     NW_ANCHOR = "nw"
     BOARD_WIDTH = 7
     BOARD_HEIGHT = 6
 
     # TODO:: Make size constants
-    def __init__(self):
+    def __init__(self, canvas, create_chip):
         self.__columns = []
-        self.red_piece = t.PhotoImage(file=self.FIRST_PLAYER)
-        self.blue_piece = t.PhotoImage(file=self.SECOND_PLAYER)
+        self._canvas = canvas
+        self.__create_chip = create_chip
 
         for i in range(7):
             column = []
@@ -50,46 +54,67 @@ class Board:
             # column.reverse()
             self.__columns.append(column)
 
-    def add_chip(self, column, player, game):
+    def add_chip(self, column, player):
         # TODO:: User assert on the output of this function
         if self.__columns is None:
             return False
-        row = -1
+        designated_row = -1
 
-        for i in range(Board.BOARD_HEIGHT - 1, -1, -1):
-            if self.__columns[column][i].get_chip().get_player() is None:
-                row = i
+        for row in range(Board.BOARD_HEIGHT - 1, -1, -1):
+            if self.__columns[column][row].get_chip_owner() == game.Game.EMPTY:
+                designated_row = row
                 break
-        if row == -1:
+
+        if designated_row == -1:
             return False
 
-        cell = self.__columns[column][row]
+        cell = self.__columns[column][designated_row]
 
-        if player == game.get_player():
-            chip = self.red_piece
-        else:
-            chip = self.blue_piece
-
-        self.__set_cell(player, column, row)
-        game.get_canvas().create_image(cell.get_location()[0],
-                            cell.get_location()[1], image=chip,
-                            anchor=self.NW_ANCHOR)
+        self.__set_cell(player, column, designated_row)
+        self.__create_chip(cell.get_location()[0],
+                           cell.get_location()[1], player)
+        #
+        # if player == game.get_player():
+        #     chip = self.red_piece
+        # else:
+        #     chip = self.blue_piece
+        #
+        # self._canvas.create_image(cell.get_location()[0],
+        #                     cell.get_location()[1], image=chip,
+        #                     anchor=self.NW_ANCHOR)
 
         return True
 
     def __set_cell(self, player, column, row):
-        self.__columns[column][row].get_chip().set_player(player)
+        self.__columns[column][row].set_chip_owner(player)
 
     def get_columns(self):
+        columns = [[int(self.__columns[col][cell]) for cell in
+                    range(len(self.__columns[col]))] for
+                   col in range(len(
+                self.__columns))]
+        return columns
+
+    def get_columns_as_str(self):
+        columns = [[str(self.__columns[col][cell]) for cell in range(len(
+            self.__columns[col]))] for col in range(len(self.__columns))]
+
+        return columns
+
+    def __repr__(self):
         return self.__columns
 
-
-class Chip:
-    def __init__(self, player):
-        self.__player = player
-
-    def get_player(self):
-        return self.__player
-
-    def set_player(self, player):
-        self.__player = player
+#
+#
+# class Chip:
+#     def __init__(self, player):
+#         self.__player = player
+#
+#     def get_player(self):
+#         return self.__player
+#
+#     def set_player(self, player):
+#         self.__player = player
+#
+#     def __repr__(self):
+#         return str(self.__player)

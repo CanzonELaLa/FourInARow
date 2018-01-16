@@ -1,4 +1,30 @@
-first the ai will check if the enemy has more than 1 consecutive chips
-if so circumvent his efforts
-else look at longest chip sequence of self and try to elongate it if possible
-else random
+1. if a winning move exists - win
+2. map out possible threats and rank them according to
+    a. sequence length
+    b. moves until completion
+3. if rank > threshold - remove threat
+4. map out own sequences and rank them according to the mentioned
+criteria
+5. if all ranks are 0, column 4
+6. else, make move with best rank
+7. conclude with awesome catchphrase
+
+Step 1
+
+Analyze board using:
+
+a list of tuples of 3 containing
+the starting location of a sequence (left-upper most chip), a direction (h -
+right, v - down, du - up-right, dd - down-right), and sequence length. The list
+will include unbound sequences only.
+
+The analysis will contain two lists, one for A.I. sequences, and the other
+for rival sequences.
+
+Step 2
+
+Rank each tuple in list according to the following formula:
+
+rank = sequence_length + (4 - steps_to_completion_of_sequence)
+
+steps_to_completion_of_sequence will be calculated by predicting
