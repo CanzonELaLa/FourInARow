@@ -1,6 +1,7 @@
 from board import *
 from sys import argv
 from random import randint
+from time import sleep
 
 DELTA_HEIGHT = 130
 DELTA_WIDTH = 180
@@ -29,7 +30,7 @@ class GUI:
 
     MESSAGE_DISPLAY_TIMEOUT = 250
 
-    def __init__(self, player, make_move):
+    def __init__(self, player, make_move, get_current_player, get_player):
         """
         Initializes the GUI and connects the communicator.
         :param parent: the tkinter root.
@@ -42,6 +43,8 @@ class GUI:
         self._canvas.create_image(0, 0, image=self.__bg, anchor="nw")
         self.__player = player
         self.__make_move = make_move
+        self.__get_player = get_player
+        self.__get_current_player = get_current_player
 
         # UI things
         self.__column_buttons = []
@@ -65,6 +68,7 @@ class GUI:
         self.__your_label = None
         self.__enemy_label = None
         self.__place_widgets()
+        self.lock = False
         # self.__game = Game()
         # self.__game.set_canvas(self._canvas)
         # self.__game.set_gui(self)
@@ -147,9 +151,12 @@ class GUI:
                                   image=self.__labels_images["Draw"],
                                   anchor=CENTER_ANCHOR)
 
-    def disable_column_buttons(self):
+    def disable_column_buttons(self, enable=False):
         for button in self.__column_buttons:
-            button.config(state="disabled")
+            if enable:
+                button.config(state="active")
+            else:
+                button.config(state="disabled")
 
     def toggle_column_buttons(self, activate):
         if not activate:
@@ -218,8 +225,41 @@ class GUI:
             else:
                 chip = self.blue_piece
 
-        self._canvas.create_image(x, y, image=chip,
-                                  anchor=NW_ANCHOR)
+        # self._canvas.create_image(x, y, image=chip,
+        #                           anchor=NW_ANCHOR)
+        if not win:
+            id = self._canvas.create_image(x, 10 + DELTA_CELL, image=chip,
+                                      anchor=NW_ANCHOR)
+
+            animate = self.__get_animation_func(id, y, 10)
+            animate(1)
+        else:
+            self._canvas.create_image(x, y, image=chip,
+                                      anchor=NW_ANCHOR)
+
+    def __get_animation_func(self, obj_id, final_y, vel):
+        self.lock_buttons_for_animation(True)
+        def animate_fall(a):
+            self._canvas.move(obj_id, 0, vel + a**2 / 2) # * velocity)
+            x0, y0 = self._canvas.coords(obj_id)
+            if y0 >= final_y:
+                self._canvas.coords(obj_id, x0, final_y) #, x0 + 94, final_y
+            #  + 94)
+                self.lock_buttons_for_animation(False)
+            else:
+                #velocity = velocity + 2
+                self._canvas.after(20, animate_fall, a + 1)#, velocity)
+
+        return animate_fall
+
+    def lock_buttons_for_animation(self, flag):
+        if flag:
+            self.disable_column_buttons(False)
+            self.__button.config(state="disabled")
+            return
+        elif self.__get_current_player == self.__get_player():
+            self.disable_column_buttons(True)
+        self.__button.config(state="active")
 
     # TODO:: keeps disabling same buttons again and again because toggle
     # keeps enabling them
@@ -227,12 +267,12 @@ class GUI:
         self.__column_buttons[col].config(state="disabled")
 
     def color_winning_chips(self, player, chips, board):
-        if chips:  # TODO:: This is only because I have yet to implement
-            # diagonal checking!
-            for x, y in chips:
-                cell = board.get_cell_at(x, y)
-                self.create_chip_on_board(cell.get_location()[0],
-                                          cell.get_location()[1], player, True)
+        # TODO:: Make it so that the coloring happens only after animation end.
+
+        for x, y in chips:
+            cell = board.get_cell_at(x, y)
+            self.create_chip_on_board(cell.get_location()[0],
+                                      cell.get_location()[1], player, True)
 
 class Game:
     PLAYER_ONE = 0
@@ -250,7 +290,8 @@ class Game:
             self.__player = self.PLAYER_TWO
             self.__enemy_player = self.PLAYER_ONE
 
-        self.__gui = GUI(self.__player, self.__make_move)
+        self.__gui = GUI(self.__player, self.__make_move,
+                         self.get_current_player, self.get_player)
         self.__board = Board(self.__gui.get_canvas(),
                              self.__gui.create_chip_on_board)
         self.__win_checker = WinSearch()
