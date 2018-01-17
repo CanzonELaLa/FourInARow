@@ -7,16 +7,24 @@ DELTA_HEIGHT = 130
 DELTA_WIDTH = 180
 DELTA_CELL = 109
 CELL_PADDING = 13
-FIRST_PLAYER = "Images/Red.gif"
-SECOND_PLAYER = "Images/Blue.gif"
-FIRST_PLAYER_WIN_IMAGE = "Images/Red_glow.gif"
-SECOND_PLAYER_WIN_IMAGE = "Images/Blue_glow.gif"
+# FIRST_PLAYER = "Images/Red.gif"
+# SECOND_PLAYER = "Images/Blue.gif"
+# FIRST_PLAYER_WIN_IMAGE = "Images/Red_glow.gif"
+# SECOND_PLAYER_WIN_IMAGE = "Images/Blue_glow.gif"
+FIRST_PLAYER = "Images/white_chip.png"
+SECOND_PLAYER = "Images/black_chip.png"
+FIRST_PLAYER_WIN_IMAGE = "Images/white_chip_glow.png"
+SECOND_PLAYER_WIN_IMAGE = "Images/black_chip_glow.png"
 YOUR_TURN = "Images/Your turn.gif"
 ENEMY_TURN = "Images/Enemy turn.gif"
-BG_IMAGE = "Images/bg.gif"
-WIN_LABEL = "Images/You win.gif"
-LOSE_LABEL = "Images/You lose.gif"
-DRAW_LABEL = "Images/Draw.gif"
+# BG_IMAGE = "Images/bg.gif"
+BG_IMAGE = "Images/bg.png"
+# WIN_LABEL = "Images/You win.gif"
+# LOSE_LABEL = "Images/You lose.gif"
+# DRAW_LABEL = "Images/Draw.gif"
+WIN_LABEL = "Images/You win.png"
+LOSE_LABEL = "Images/You lose.png"
+DRAW_LABEL = "Images/Draw.png"
 CENTER_ANCHOR = "center"
 NW_ANCHOR = "nw"
 WIN_STATES = ["0000", "1111"]
@@ -48,8 +56,8 @@ class GUI:
 
         # UI things
         self.__column_buttons = []
-        self.__column_button_images = [t.PhotoImage(file="Images/button" +
-                                                         str(x) + ".gif")
+        self.__column_button_images = [t.PhotoImage(
+            file="Images/button_images/button" + str(x) + ".png")
                                        for x in range(1, 8)]
         # TODO:: This is some ugly way of doing this
         self.__labels_images = {}
@@ -100,13 +108,14 @@ class GUI:
 
         for i in range(7):
             button = t.Button(self.__root)
-            button.config(image=self.__column_button_images[i], width=94,
-                          height=94)
+            button.config(image=self.__column_button_images[i], width=92,
+                          height=92)
             button.config(borderwidth=0)
+            button.config(relief="raised")
             self.__column_buttons.append(button)
             button.config(command=create_add_chip_func(i))
             button.place(x=DELTA_WIDTH + CELL_PADDING +
-                           (CELL_PADDING - 2) * i + DELTA_CELL * i + 2,
+                           (CELL_PADDING - 2) * i + DELTA_CELL * i,
                          y=10)
 
         # self.__button = t.Button(self._parent, text="YO",
@@ -214,7 +223,7 @@ class GUI:
         return self._canvas
 
     def create_chip_on_board(self, x, y, current_player, win=False,
-                             winning_chips=None, board=None):
+                             winning_chips=None, board=None, winner=None):
         if win:
             if current_player == self.__player:
                 chip = self.red_piece_glowing
@@ -233,13 +242,14 @@ class GUI:
                                            anchor=NW_ANCHOR)
 
             animate = self.__get_animation_func(id, y, 10, winning_chips,
-                                                board)
+                                                board, winner)
             animate(1)
         else:  # Set chips to glowing ones
             self._canvas.create_image(x, y, image=chip,
                                       anchor=NW_ANCHOR)
 
-    def __get_animation_func(self, obj_id, final_y, vel, winning_chips, board):
+    def __get_animation_func(self, obj_id, final_y, vel, winning_chips,
+                             board, winner):
         self.lock_buttons_for_animation(True)
 
         def animate_fall(acceleration):
@@ -251,6 +261,12 @@ class GUI:
                 if winning_chips is not None:
                     self.color_winning_chips(self.__get_current_player(),
                                              winning_chips, board)
+                    if winner == self.__player:
+                        self.disable_column_buttons()
+                        self.show_win()
+                    else:
+                        self.disable_column_buttons()
+                        self.show_lose()
             else:
                 self._canvas.after(20, animate_fall, acceleration + 1)
 
@@ -331,17 +347,18 @@ class Game:
             self.__gui.disable_column_buttons()
             self.__gui.show_draw()
         else:
+            self.__game_over = True
             self.__gui.create_chip_on_board(x, y, self.__current_player,
                                             winning_chips=winning_chips,
-                                            board=self.__board)
-            if winner == self.__player:
-                self.__game_over = True
-                self.__gui.disable_column_buttons()
-                self.__gui.show_win()
-            elif winner == self.__enemy_player:
-                self.__game_over = True
-                self.__gui.disable_column_buttons()
-                self.__gui.show_lose()
+                                            board=self.__board, winner=winner)
+            # if winner == self.__player:
+            #     self.__game_over = True
+            #     self.__gui.disable_column_buttons()
+            #     self.__gui.show_win()
+            # elif winner == self.__enemy_player:
+            #     self.__game_over = True
+            #     self.__gui.disable_column_buttons()
+            #     self.__gui.show_lose()
 
     def __find_connected_and_winner(self, column, row):
         columns = self.__board.get_columns()
