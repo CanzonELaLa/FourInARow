@@ -213,7 +213,8 @@ class GUI:
     def get_canvas(self):
         return self._canvas
 
-    def create_chip_on_board(self, x, y, current_player, win=False):
+    def create_chip_on_board(self, x, y, current_player, win=False,
+                             winning_chips=None, board=None):
         if win:
             if current_player == self.__player:
                 chip = self.red_piece_glowing
@@ -227,38 +228,43 @@ class GUI:
 
         # self._canvas.create_image(x, y, image=chip,
         #                           anchor=NW_ANCHOR)
-        if not win:
+        if not win:  # Create chip and animate it falling
             id = self._canvas.create_image(x, 10 + DELTA_CELL, image=chip,
-                                      anchor=NW_ANCHOR)
+                                           anchor=NW_ANCHOR)
 
-            animate = self.__get_animation_func(id, y, 10)
+            animate = self.__get_animation_func(id, y, 10, winning_chips,
+                                                board)
             animate(1)
-        else:
+        else:  # Set chips to glowing ones
             self._canvas.create_image(x, y, image=chip,
                                       anchor=NW_ANCHOR)
 
-    def __get_animation_func(self, obj_id, final_y, vel):
+    def __get_animation_func(self, obj_id, final_y, vel, winning_chips, board):
         self.lock_buttons_for_animation(True)
-        def animate_fall(a):
-            self._canvas.move(obj_id, 0, vel + a**2 / 2) # * velocity)
+
+        def animate_fall(acceleration):
+            self._canvas.move(obj_id, 0, vel + acceleration ** 2 / 2)
             x0, y0 = self._canvas.coords(obj_id)
             if y0 >= final_y:
-                self._canvas.coords(obj_id, x0, final_y) #, x0 + 94, final_y
-            #  + 94)
+                self._canvas.coords(obj_id, x0, final_y)
                 self.lock_buttons_for_animation(False)
+                if winning_chips is not None:
+                    self.color_winning_chips(self.__get_current_player(),
+                                             winning_chips, board)
             else:
-                #velocity = velocity + 2
-                self._canvas.after(20, animate_fall, a + 1)#, velocity)
+                self._canvas.after(20, animate_fall, acceleration + 1)
 
         return animate_fall
 
     def lock_buttons_for_animation(self, flag):
         if flag:
+            self.lock = True
             self.disable_column_buttons(False)
             self.__button.config(state="disabled")
             return
         elif self.__get_current_player == self.__get_player():
             self.disable_column_buttons(True)
+        self.lock = False
         self.__button.config(state="active")
 
     # TODO:: keeps disabling same buttons again and again because toggle
@@ -268,11 +274,11 @@ class GUI:
 
     def color_winning_chips(self, player, chips, board):
         # TODO:: Make it so that the coloring happens only after animation end.
-
         for x, y in chips:
             cell = board.get_cell_at(x, y)
             self.create_chip_on_board(cell.get_location()[0],
                                       cell.get_location()[1], player, True)
+
 
 class Game:
     PLAYER_ONE = 0
@@ -295,6 +301,7 @@ class Game:
         self.__board = Board(self.__gui.get_canvas(),
                              self.__gui.create_chip_on_board)
         self.__win_checker = WinSearch()
+        self.__game_over = False
 
         # TODO:: Ugly code, find a workaround
         self.__last_inserted_chip = None
@@ -302,39 +309,39 @@ class Game:
         self.__gui.get_root().mainloop()
 
     def __make_move(self, column):
-        # if self.__current_player == 0:
-        #     print("server side")
-        # else:
-        #     print("client side")
-        success, row = self.__board.add_chip(column,
-                                             self.PLAYER_ONE if not
-                                             self.__current_player else
-                                             self.PLAYER_TWO)
+        success, row = self.__board.check_add_chip(column,
+                                                   self.PLAYER_ONE if not
+                                                   self.__current_player else
+                                                   self.PLAYER_TWO)
         if not success:
             raise Exception("Illegal move")
 
         self.__last_inserted_chip = column, row
 
-        # print(self.__find_connected_and_winner(column, row))
-
-        # winner = self.get_winner()
         winner, winning_chips = self.__find_connected_and_winner(column, row)
+        x, y = self.__board.get_chip_location(column, row)
+
         if winner is None:
+            self.__gui.create_chip_on_board(x, y, self.__current_player)
             self.__toggle_player()
             self.__disable_illegal_columns()
-        if winner == self.__player:
-            self.__gui.disable_column_buttons()
-            self.__gui.color_winning_chips(self.__player, winning_chips,
-                                           self.__board)
-            self.__gui.show_win()
-        elif winner == self.__enemy_player:
-            self.__gui.disable_column_buttons()
-            self.__gui.color_winning_chips(self.__player, winning_chips,
-                                           self.__board)
-            self.__gui.show_lose()
-        elif winner is self.DRAW:
+        elif winner == self.DRAW:
+            self.__gui.create_chip_on_board(x, y, self.__current_player)
+            self.__game_over = True
             self.__gui.disable_column_buttons()
             self.__gui.show_draw()
+        else:
+            self.__gui.create_chip_on_board(x, y, self.__current_player,
+                                            winning_chips=winning_chips,
+                                            board=self.__board)
+            if winner == self.__player:
+                self.__game_over = True
+                self.__gui.disable_column_buttons()
+                self.__gui.show_win()
+            elif winner == self.__enemy_player:
+                self.__game_over = True
+                self.__gui.disable_column_buttons()
+                self.__gui.show_lose()
 
     def __find_connected_and_winner(self, column, row):
         columns = self.__board.get_columns()
@@ -359,28 +366,32 @@ class Game:
 
             if flag:
                 return self.__current_player, [(k, row) for k in
-                                                     range(j, j + 4)]
+                                               range(j, j + 4)]
 
         # Check diagonal
         for indices_diff in range(len(rows) - 1, -len(columns), -1):
             lst = []
             for i in range(len(rows)):
                 for j in range(len(columns)):
-                    if indices_diff == i - j and \
-                            columns[j][i] == self.__current_player:
-                        lst.append((j, i))
+                    if indices_diff == i - j:
+                        if columns[j][i] == self.__current_player:
+                            lst.append((j, i))
+                        else:
+                            lst.clear()
 
                 if len(lst) == 4:
                     return self.__current_player, lst
 
-        # Check antidiagonal
+        # Check anti-diagonal
         for indices_sum in range(len(rows) + len(columns) - 1):
             lst = []
             for i in range(len(rows)):
                 for j in range(len(columns)):
-                    if indices_sum == i + j and \
-                            columns[j][i] == self.__current_player:
-                        lst.append((j, i))
+                    if indices_sum == i + j:
+                        if columns[j][i] == self.__current_player:
+                            lst.append((j, i))
+                        else:
+                            lst.clear()
 
                 if len(lst) == 4:
                     return self.__current_player, lst

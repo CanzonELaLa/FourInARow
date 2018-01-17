@@ -54,7 +54,7 @@ class Board:
             # column.reverse()
             self.__columns.append(column)
 
-    def add_chip(self, column, player):
+    def check_add_chip(self, column, player):
         # TODO:: User assert on the output of this function
         if self.__columns is None:
             return False, -1
@@ -71,8 +71,8 @@ class Board:
         cell = self.__columns[column][designated_row]
 
         self.__set_cell(player, column, designated_row)
-        self.__create_chip(cell.get_location()[0],
-                           cell.get_location()[1], player)
+        # self.__create_chip(cell.get_location()[0],
+        #                    cell.get_location()[1], player)
         #
         # if player == game.get_player():
         #     chip = self.red_piece
@@ -84,6 +84,14 @@ class Board:
         #                     anchor=self.NW_ANCHOR)
 
         return True, designated_row
+
+    def get_chip_location(self, column, row):
+        cell = self.__columns[column][row]
+
+        # self.__set_cell(player, column, row)
+        return cell.get_location()[0], cell.get_location()[1]
+        # self.__create_chip(cell.get_location()[0],
+        #                    cell.get_location()[1], player)
 
     def __set_cell(self, player, column, row):
         self.__columns[column][row].set_chip_owner(player)
