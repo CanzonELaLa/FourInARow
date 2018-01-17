@@ -299,19 +299,23 @@ class GUI:
                 self._canvas.coords(obj_id, x0, final_y)
                 self.lock_buttons_for_animation(False)
                 if winning_chips is not None:
-                    self.color_winning_chips(self.__get_current_player(),
-                                             winning_chips, board)
-                    if winner == self.__player:
-                        self.disable_column_buttons()
-                        # self.show_win()
-                        self.show_game_over_label(winner)
-                    else:
-                        self.disable_column_buttons()
-                        # self.show_lose()
-                        self.show_game_over_label(winner)
+                    on_win_condition(winning_chips, winner)
             else:
                 self._canvas.after(self.ANIMATION_REFRESH, animate_fall,
                                    acceleration + 1)
+
+        def on_win_condition(winning_chips, winner):
+            self.color_winning_chips(self.__get_current_player(),
+                                     winning_chips, board)
+            if winner == self.__player:
+                self.disable_column_buttons()
+                # self.show_win()
+                self.show_game_over_label(winner)
+            else:
+                self.disable_column_buttons()
+                # self.show_lose()
+                self.show_game_over_label(winner)
+
 
         return animate_fall
 
