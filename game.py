@@ -3,31 +3,22 @@ from sys import argv
 from random import randint
 from time import sleep
 
-DELTA_HEIGHT = 130
-DELTA_WIDTH = 180
-DELTA_CELL = 109
-CELL_PADDING = 13
-# FIRST_PLAYER = "Images/Red.gif"
-# SECOND_PLAYER = "Images/Blue.gif"
-# FIRST_PLAYER_WIN_IMAGE = "Images/Red_glow.gif"
-# SECOND_PLAYER_WIN_IMAGE = "Images/Blue_glow.gif"
-FIRST_PLAYER = "Images/white_chip.png"
-SECOND_PLAYER = "Images/black_chip.png"
-FIRST_PLAYER_WIN_IMAGE = "Images/white_chip_glow.png"
-SECOND_PLAYER_WIN_IMAGE = "Images/black_chip_glow.png"
-YOUR_TURN = "Images/Your turn.gif"
-ENEMY_TURN = "Images/Enemy turn.gif"
-# BG_IMAGE = "Images/bg.gif"
-BG_IMAGE = "Images/bg.png"
+
+
+
+
+
+
+
+
 # WIN_LABEL = "Images/You win.gif"
 # LOSE_LABEL = "Images/You lose.gif"
 # DRAW_LABEL = "Images/Draw.gif"
-WIN_LABEL = "Images/You win.png"
-LOSE_LABEL = "Images/You lose.png"
-DRAW_LABEL = "Images/Draw.png"
-CENTER_ANCHOR = "center"
-NW_ANCHOR = "nw"
-WIN_STATES = ["0000", "1111"]
+# BG_IMAGE = "Images/bg.gif"
+# FIRST_PLAYER_CHIP = "Images/Red.gif"
+# SECOND_PLAYER_CHIP = "Images/Blue.gif"
+# FIRST_PLAYER_WIN_CHIP = "Images/Red_glow.gif"
+# SECOND_PLAYER_WIN_CHIP = "Images/Blue_glow.gif"
 
 
 class GUI:
@@ -35,6 +26,33 @@ class GUI:
     Designed to handle the GUI aspects (creating a window, buttons and
     pop-ups. Also initializes the communicator object.
     """
+
+    ANIMATION_REFRESH = 20
+
+    DELTA_HEIGHT = 130
+    DELTA_WIDTH = 180
+    DELTA_CELL = 109
+    CELL_PADDING = 13
+
+    COLUMN_BUTTON_SIZE = 92
+    CANVAS_HEIGHT = 860
+    CANVAS_WIDTH = 1200
+    LABEL_LIFE_TIME_MS = 1500
+    ACCEL_NORMALIZATION = 2
+
+    FIRST_PLAYER_CHIP = "Images/white_chip.png"
+    SECOND_PLAYER_CHIP = "Images/black_chip.png"
+    FIRST_PLAYER_WIN_CHIP = "Images/white_chip_glow.png"
+    SECOND_PLAYER_WIN_CHIP = "Images/black_chip_glow.png"
+    YOUR_TURN = "Images/Your turn.gif"
+    ENEMY_TURN = "Images/Enemy turn.gif"
+    BG_IMAGE = "Images/bg.png"
+    WIN_LABEL = "Images/You win.png"
+    LOSE_LABEL = "Images/You lose.png"
+    DRAW_LABEL = "Images/Draw.png"
+
+    CENTER_ANCHOR = "center"
+    NW_ANCHOR = "nw"
 
     MESSAGE_DISPLAY_TIMEOUT = 250
 
@@ -45,9 +63,10 @@ class GUI:
         """
         self.__root = t.Tk()
         self.__root.resizable(width=False, height=False)
-        self._canvas = t.Canvas(self.__root, width=1200, height=860)
+        self._canvas = t.Canvas(self.__root, width=self.CANVAS_WIDTH,
+                                height=self.CANVAS_HEIGHT)
         self._canvas.pack()
-        self.__bg = t.PhotoImage(file=BG_IMAGE)
+        self.__bg = t.PhotoImage(file=self.BG_IMAGE)
         self._canvas.create_image(0, 0, image=self.__bg, anchor="nw")
         self.__player = player
         self.__make_move = make_move
@@ -61,16 +80,16 @@ class GUI:
                                        for x in range(1, 8)]
         # TODO:: This is some ugly way of doing this
         self.__labels_images = {}
-        self.__labels_images["Your Turn"] = t.PhotoImage(file=YOUR_TURN)
-        self.__labels_images["Enemy Turn"] = t.PhotoImage(file=ENEMY_TURN)
-        self.__labels_images["You Win"] = t.PhotoImage(file=WIN_LABEL)
-        self.__labels_images["You Lose"] = t.PhotoImage(file=LOSE_LABEL)
-        self.__labels_images["Draw"] = t.PhotoImage(file=DRAW_LABEL)
+        self.__labels_images["Your Turn"] = t.PhotoImage(file=self.YOUR_TURN)
+        self.__labels_images["Enemy Turn"] = t.PhotoImage(file=self.ENEMY_TURN)
+        self.__labels_images["You Win"] = t.PhotoImage(file=self.WIN_LABEL)
+        self.__labels_images["You Lose"] = t.PhotoImage(file=self.LOSE_LABEL)
+        self.__labels_images["Draw"] = t.PhotoImage(file=self.DRAW_LABEL)
 
-        self.red_piece = t.PhotoImage(file=FIRST_PLAYER)
-        self.blue_piece = t.PhotoImage(file=SECOND_PLAYER)
-        self.red_piece_glowing = t.PhotoImage(file=FIRST_PLAYER_WIN_IMAGE)
-        self.blue_piece_glowing = t.PhotoImage(file=SECOND_PLAYER_WIN_IMAGE)
+        self.red_piece = t.PhotoImage(file=self.FIRST_PLAYER_CHIP)
+        self.blue_piece = t.PhotoImage(file=self.SECOND_PLAYER_CHIP)
+        self.red_piece_glowing = t.PhotoImage(file=self.FIRST_PLAYER_WIN_CHIP)
+        self.blue_piece_glowing = t.PhotoImage(file=self.SECOND_PLAYER_WIN_CHIP)
 
         # TODO:: Refactor to dictionary
         self.__your_label = None
@@ -85,12 +104,12 @@ class GUI:
         #     self.__game.set_player(self.__game.PLAYER_TWO)
 
     def __place_widgets(self):
-        def create_add_chip_func(i):
+        def create_add_chip_func(j):
             def add_chip_func():
                 # success = \
                 #     self.__game.get_board().add_chip(i, game.Game.PLAYER_ONE,
                 #                                      self._canvas)
-                success = self.__make_move(i)
+                success = self.__make_move(j)
                 # Disable buttons
                 # self.toggle_column_buttons(False)
                 return success
@@ -108,20 +127,23 @@ class GUI:
 
         for i in range(7):
             button = t.Button(self.__root)
-            button.config(image=self.__column_button_images[i], width=92,
-                          height=92)
+            button.config(image=self.__column_button_images[i],
+                          width=self.COLUMN_BUTTON_SIZE,
+                          height=self.COLUMN_BUTTON_SIZE)
             button.config(borderwidth=0)
             button.config(relief="raised")
             self.__column_buttons.append(button)
             button.config(command=create_add_chip_func(i))
-            button.place(x=DELTA_WIDTH + CELL_PADDING +
-                           (CELL_PADDING - 2) * i + DELTA_CELL * i,
+            button.place(x=self.DELTA_WIDTH + self.CELL_PADDING +
+                           (self.CELL_PADDING - 2) * i + self.DELTA_CELL * i,
                          y=10)
 
         # self.__button = t.Button(self._parent, text="YO",
         #                          font=("Garamond", 20, "bold"),
         #                          command=lambda:
         #                          self.__communicator.send_message("YO"))
+
+        # TODO:: These next lines are for mockup, remove them afterwards
         self.__button = t.Button(self.__root, text="YO",
                                  font=("Garamond", 20, "bold"),
                                  command=yo_things)
@@ -135,30 +157,54 @@ class GUI:
         self.__win_button.place(x=0, y=0)
         self.__lose_button.place(x=0, y=30)
 
-    # TODO:: Combine these two
+    # TODO:: START REMOVE
     def show_win(self):
-        # TODO:: Change toggle so it can be used here as well
         self._canvas.delete(self.__your_label)
         self._canvas.delete(self.__enemy_label)
-        self._canvas.create_image(600, 430,
+        self._canvas.create_image(self.CANVAS_WIDTH / 2,
+                                  self.CANVAS_HEIGHT / 2,
                                   image=self.__labels_images["You Win"],
-                                  anchor=CENTER_ANCHOR)
+                                  anchor=self.CENTER_ANCHOR)
 
     def show_lose(self):
         self.disable_column_buttons()
         self._canvas.delete(self.__your_label)
         self._canvas.delete(self.__enemy_label)
-        self._canvas.create_image(600, 430,
+        self._canvas.create_image(self.CANVAS_WIDTH / 2,
+                                  self.CANVAS_HEIGHT / 2,
                                   image=self.__labels_images["You Lose"],
-                                  anchor=CENTER_ANCHOR)
+                                  anchor=self.CENTER_ANCHOR)
 
     def show_draw(self):
         self.disable_column_buttons()
         self._canvas.delete(self.__your_label)
         self._canvas.delete(self.__enemy_label)
-        self._canvas.create_image(600, 430,
+        self._canvas.create_image(self.CANVAS_WIDTH / 2,
+                                  self.CANVAS_HEIGHT / 2,
                                   image=self.__labels_images["Draw"],
-                                  anchor=CENTER_ANCHOR)
+                                  anchor=self.CENTER_ANCHOR)
+    # TODO:: END REMOVE
+
+    def show_game_over_label(self, winning_player):
+        # TODO:: Change toggle so it can be used here as well
+        self.disable_column_buttons()
+        self._canvas.delete(self.__your_label)
+        self._canvas.delete(self.__enemy_label)
+        if winning_player == self.__get_player():
+            self._canvas.create_image(self.CANVAS_WIDTH / 2,
+                                      self.CANVAS_HEIGHT / 2,
+                                      image=self.__labels_images["You Win"],
+                                      anchor=self.CENTER_ANCHOR)
+        elif winning_player == Game.DRAW:
+            self._canvas.create_image(self.CANVAS_WIDTH / 2,
+                                      self.CANVAS_HEIGHT / 2,
+                                      image=self.__labels_images["Draw"],
+                                      anchor=self.CENTER_ANCHOR)
+        elif winning_player != self.__get_player():
+            self._canvas.create_image(self.CANVAS_WIDTH / 2,
+                                      self.CANVAS_HEIGHT / 2,
+                                      image=self.__labels_images["You Lose"],
+                                      anchor=self.CENTER_ANCHOR)
 
     def disable_column_buttons(self, enable=False):
         for button in self.__column_buttons:
@@ -173,9 +219,12 @@ class GUI:
             self._canvas.delete(self.__your_label)
             self.disable_column_buttons()
             self.__enemy_label = \
-                self._canvas.create_image(600, 430, image=self.__labels_images[
-                    "Enemy Turn"], anchor=CENTER_ANCHOR)
-            self.__root.after(1500,
+                self._canvas.create_image(self.CANVAS_WIDTH / 2,
+                                          self.CANVAS_HEIGHT / 2,
+                                          image=self.__labels_images[
+                                              "Enemy Turn"],
+                                          anchor=self.CENTER_ANCHOR)
+            self.__root.after(self.LABEL_LIFE_TIME_MS,
                               lambda: self._canvas.delete(self.__enemy_label))
         else:
             # Remove other label if it is still present
@@ -183,28 +232,15 @@ class GUI:
             for button in self.__column_buttons:
                 button.config(state="active")
             self.__your_label = \
-                self._canvas.create_image(600, 430, image=self.__labels_images[
-                    "Your Turn"], anchor=CENTER_ANCHOR)
-            self.__root.after(1500,
+                self._canvas.create_image(self.CANVAS_WIDTH / 2,
+                                          self.CANVAS_HEIGHT / 2,
+                                          image=self.__labels_images[
+                                              "Your Turn"],
+                                          anchor=self.CENTER_ANCHOR)
+            self.__root.after(self.LABEL_LIFE_TIME_MS,
                               lambda: self._canvas.delete(self.__your_label))
 
-    #
-    # def __handle_message(self, text=None):
-    #     """
-    #     Specifies the event handler for the message getting event in the
-    #     communicator. Prints a message when invoked (and invoked by the
-    #     communicator when a message is received). The message will
-    #     automatically disappear after a fixed interval.
-    #     :param text: the text to be printed.
-    #     :return: None.
-    #     """
-    #     if text:
-    #         self.__label["text"] = text
-    #         self._parent.after(self.MESSAGE_DISPLAY_TIMEOUT,
-    #                            self.__handle_message)
-    #     else:
-    #         self.__label["text"] = ""
-
+    # TODO:: This is a mockup function
     def __make_random_move(self):
         col = randint(0, 6)
         # while not self.__game.get_board().add_chip(col, game.Game.PLAYER_ONE,
@@ -238,22 +274,26 @@ class GUI:
         # self._canvas.create_image(x, y, image=chip,
         #                           anchor=NW_ANCHOR)
         if not win:  # Create chip and animate it falling
-            id = self._canvas.create_image(x, 10 + DELTA_CELL, image=chip,
-                                           anchor=NW_ANCHOR)
+            id = self._canvas.create_image(x, 10, image=chip,
+                                           anchor=self.NW_ANCHOR)
+            # can change 10 to 10  + DELTA_CELL to start IN THE BOARD
+            # instead of atop it
 
             animate = self.__get_animation_func(id, y, 10, winning_chips,
                                                 board, winner)
             animate(1)
         else:  # Set chips to glowing ones
             self._canvas.create_image(x, y, image=chip,
-                                      anchor=NW_ANCHOR)
+                                      anchor=self.NW_ANCHOR)
 
     def __get_animation_func(self, obj_id, final_y, vel, winning_chips,
                              board, winner):
         self.lock_buttons_for_animation(True)
 
         def animate_fall(acceleration):
-            self._canvas.move(obj_id, 0, vel + acceleration ** 2 / 2)
+            self._canvas.move(obj_id, 0,
+                              vel + acceleration ** 2 /
+                              self.ACCEL_NORMALIZATION)
             x0, y0 = self._canvas.coords(obj_id)
             if y0 >= final_y:
                 self._canvas.coords(obj_id, x0, final_y)
@@ -263,12 +303,15 @@ class GUI:
                                              winning_chips, board)
                     if winner == self.__player:
                         self.disable_column_buttons()
-                        self.show_win()
+                        # self.show_win()
+                        self.show_game_over_label(winner)
                     else:
                         self.disable_column_buttons()
-                        self.show_lose()
+                        # self.show_lose()
+                        self.show_game_over_label(winner)
             else:
-                self._canvas.after(20, animate_fall, acceleration + 1)
+                self._canvas.after(self.ANIMATION_REFRESH, animate_fall,
+                                   acceleration + 1)
 
         return animate_fall
 
@@ -302,6 +345,10 @@ class Game:
     DRAW = 2
     EMPTY = 3
 
+    LENGTH_OF_WINNING_SEQ = 4
+
+    ILLEGAL_MOVE = "Illegal move"
+
     def __init__(self):
         if len(argv) == 3:
             self.__current_player = self.PLAYER_ONE
@@ -330,7 +377,7 @@ class Game:
                                                    self.__current_player else
                                                    self.PLAYER_TWO)
         if not success:
-            raise Exception("Illegal move")
+            raise Exception(self.ILLEGAL_MOVE)
 
         self.__last_inserted_chip = column, row
 
@@ -345,7 +392,8 @@ class Game:
             self.__gui.create_chip_on_board(x, y, self.__current_player)
             self.__game_over = True
             self.__gui.disable_column_buttons()
-            self.__gui.show_draw()
+            # self.__gui.show_draw()
+            # self.__gui.show_game_over_label(self.DRAW)
         else:
             self.__game_over = True
             self.__gui.create_chip_on_board(x, y, self.__current_player,
@@ -364,11 +412,12 @@ class Game:
         columns = self.__board.get_columns()
         # Check column
         lst = []
-        for j in range(row, min(row + 4, len(columns[column]))):
+        for j in range(row, min(row + self.LENGTH_OF_WINNING_SEQ,
+                                len(columns[column]))):
             if columns[column][j] == self.__current_player:
                 lst.append((column, j))
 
-        if len(lst) == 4:
+        if len(lst) == self.LENGTH_OF_WINNING_SEQ:
             return self.__current_player, lst
 
         # Check row
@@ -376,14 +425,16 @@ class Game:
 
         for j in range(len(rows[row]) - 3):
             flag = True
-            for i in range(4):
+            for i in range(self.LENGTH_OF_WINNING_SEQ):
                 if rows[row][j + i] != self.__current_player:
                     flag = False
                     break
 
             if flag:
                 return self.__current_player, [(k, row) for k in
-                                               range(j, j + 4)]
+                                               range(j, j +
+                                                     self.LENGTH_OF_WINNING_SEQ
+                                                     )]
 
         # Check diagonal
         for indices_diff in range(len(rows) - 1, -len(columns), -1):
@@ -396,7 +447,7 @@ class Game:
                         else:
                             lst.clear()
 
-                if len(lst) == 4:
+                if len(lst) == self.LENGTH_OF_WINNING_SEQ:
                     return self.__current_player, lst
 
         # Check anti-diagonal
@@ -410,8 +461,11 @@ class Game:
                         else:
                             lst.clear()
 
-                if len(lst) == 4:
+                if len(lst) == self.LENGTH_OF_WINNING_SEQ:
                     return self.__current_player, lst
+
+        if self.check_draw():
+            return self.DRAW, None
 
         return None, None
 
@@ -491,6 +545,7 @@ class WinSearch:
     # Re-purposed code from ex5
 
     EMPTY_STRING = ""
+    WIN_STATES = ["0000", "1111"]
 
     def __init__(self):
         pass
@@ -613,7 +668,7 @@ class WinSearch:
 
     def get_winner_from_columns(self, columns):
         winner = self.get_winner(self.get_directional_strings(columns),
-                                 WIN_STATES)
+                                 self.WIN_STATES)
         return int(winner) if winner is not None else None
 
     # def get_states(self, columns, ):
