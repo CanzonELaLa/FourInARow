@@ -9,7 +9,7 @@ class GUI:
     """
 
     ANIMATION_REFRESH = 41
-    ACCEL_NORMALIZATION = 0.5
+    ACCEL_NORMALIZATION = 0.025
     ACCELERATION = 9
     STARTING_SPEED = 0
 
@@ -29,7 +29,7 @@ class GUI:
     SECOND_PLAYER_WIN_CHIP = "Images/black_chip_glow.png"
     YOUR_TURN = "Images/Your turn.gif"
     ENEMY_TURN = "Images/Enemy turn.gif"
-    BG_IMAGE = "Images/bg.png"
+    BG_IMAGE = "Images/bg2.png"
     WIN_LABEL = "Images/You win.png"
     LOSE_LABEL = "Images/You lose.png"
     DRAW_LABEL = "Images/Draw.png"
@@ -249,26 +249,27 @@ class GUI:
                 chip = self.blue_piece
 
         if not win:  # Create chip and animate it falling
-            id = self._canvas.create_image(x, 10, image=chip,
+            id = self._canvas.create_image(x, 10 + self.DELTA_CELL, image=chip,
                                            anchor=self.NW_ANCHOR)
             # can change 10 to 10  + DELTA_CELL to start IN THE BOARD
             # instead of atop it
 
             animate = self.__get_animation_func(id, y, self.STARTING_SPEED,
                                                 winning_chips, board, winner)
-            animate(self.ACCELERATION)
+            animate(0)
         else:  # Set chips to glowing ones
             self._canvas.create_image(x, y, image=chip,
                                       anchor=self.NW_ANCHOR)
 
     def __get_animation_func(self, obj_id, final_y, vel, winning_chips,
                              board, winner):
-        self.lock_buttons_for_animation(True)
-
-        def animate_fall(acceleration):
+        def animate_fall(time_elapsed):
+            # self._canvas.move(obj_id, 0,
+            #                   vel + acceleration ** 2 /
+            #                   self.ACCEL_NORMALIZATION)
             self._canvas.move(obj_id, 0,
-                              vel + acceleration ** 2 /
-                              self.ACCEL_NORMALIZATION)
+                              vel * time_elapsed +
+                              self.ACCELERATION * time_elapsed ** 2)
             x0, y0 = self._canvas.coords(obj_id)
             if y0 >= final_y:
                 self._canvas.coords(obj_id, x0, final_y)
@@ -276,8 +277,10 @@ class GUI:
                 if winning_chips is not None:
                     on_win_condition(winning_chips, winner)
             else:
+                time_elapsed += self.ANIMATION_REFRESH * \
+                                self.ACCEL_NORMALIZATION
                 self._canvas.after(self.ANIMATION_REFRESH, animate_fall,
-                                   acceleration + 1)
+                                   time_elapsed)
 
         def on_win_condition(winning_chips, winner):
             self.color_winning_chips(self.__get_current_player(),
@@ -291,6 +294,7 @@ class GUI:
                 # self.show_lose()
                 self.show_game_over_label(winner)
 
+        self.lock_buttons_for_animation(True)
         return animate_fall
 
     def lock_buttons_for_animation(self, flag):
