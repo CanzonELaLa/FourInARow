@@ -27,7 +27,10 @@ class GUI:
     pop-ups. Also initializes the communicator object.
     """
 
-    ANIMATION_REFRESH = 20
+    ANIMATION_REFRESH = 41
+    ACCEL_NORMALIZATION = 0.5
+    ACCELERATION = 9
+    STARTING_SPEED = 0
 
     DELTA_HEIGHT = 130
     DELTA_WIDTH = 180
@@ -38,7 +41,6 @@ class GUI:
     CANVAS_HEIGHT = 860
     CANVAS_WIDTH = 1200
     LABEL_LIFE_TIME_MS = 1500
-    ACCEL_NORMALIZATION = 2
 
     FIRST_PLAYER_CHIP = "Images/white_chip.png"
     SECOND_PLAYER_CHIP = "Images/black_chip.png"
@@ -279,9 +281,9 @@ class GUI:
             # can change 10 to 10  + DELTA_CELL to start IN THE BOARD
             # instead of atop it
 
-            animate = self.__get_animation_func(id, y, 10, winning_chips,
-                                                board, winner)
-            animate(1)
+            animate = self.__get_animation_func(id, y, self.STARTING_SPEED,
+                                                winning_chips, board, winner)
+            animate(self.ACCELERATION)
         else:  # Set chips to glowing ones
             self._canvas.create_image(x, y, image=chip,
                                       anchor=self.NW_ANCHOR)
@@ -315,7 +317,6 @@ class GUI:
                 self.disable_column_buttons()
                 # self.show_lose()
                 self.show_game_over_label(winner)
-
 
         return animate_fall
 
