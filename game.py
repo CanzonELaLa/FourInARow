@@ -1,4 +1,5 @@
 from board import *
+from communicator import *
 from sys import argv
 from GUI import GUI
 
@@ -17,36 +18,67 @@ class Game:
     PLAYER_TWO = 1
     DRAW = 2
     EMPTY = 3
+    MIN_PORT_VALUE = 1000
+    MAX_PORT_VALUE = 65535
 
-    LENGTH_OF_WINNING_SEQ = 4
+    WINNING_SEQ_LENGTH = 4
 
     ILLEGAL_MOVE = "Illegal move"
+    INVALID_MESSAGE = "Invalid message received"
+    INVALID_GAME_STATE = "Invalid game state"
+    CHECK_WINNER_FLAG_INDEX = 29
+    ADD_CHIP_FAILED = "Failed to add chip to specified column"
+    COMMUNICATOR_MESSAGE_1 = "CHIP_DATA: "
+    COMMUNICATOR_MESSAGE_2 = "CHECK_WINNER: "
 
     def __init__(self):
+
+        # if server mode is on (no IP address provided)
         if len(argv) == 3:
-            self.__current_player = self.PLAYER_ONE
             self.__player = self.PLAYER_ONE
             self.__enemy_player = self.PLAYER_TWO
+            self.__current_player = self.__player
         else:
-            self.__current_player = self.PLAYER_TWO
             self.__player = self.PLAYER_TWO
             self.__enemy_player = self.PLAYER_ONE
+            self.__current_player = self.__enemy_player
+
 
         self.__gui = GUI(self.__player, self.__make_move,
                          self.get_current_player, self.get_player)
-        self.__board = Board(self.__gui.get_canvas(),
-                             self.__gui.create_chip_on_board)
+
+        if self.__player == self.PLAYER_TWO:
+            self.__gui.disable_column_buttons()
+
+        self.__board = Board(self.__gui.get_canvas())
         self.__win_checker = WinSearch()
         self.__game_over = False
+
 
         # TODO:: Ugly code, find a workaround
         self.__last_inserted_chip = None
 
+
+        port = int(argv[2])
+        ai = True if argv[1] == "ai" else False  # currently not in use
+        ip = None
+
+        if len(argv) == 4:
+            ip = argv[3]
+
+        self.__communicator = Communicator(self.__gui.get_root(), port, ip)
+        self.__communicator.connect()
+        self.__communicator.bind_action_to_message(self.eat_message)
+
+
         self.__gui.get_root().mainloop()
 
     def __make_move(self, column):
+        # if game over flag on, returns
         if self.__game_over:
             return
+
+        # attempts to place chip in column
         success, row = self.__board.check_add_chip(column,
                                                    self.PLAYER_ONE if not
                                                    self.__current_player else
@@ -56,23 +88,34 @@ class Game:
 
         self.__last_inserted_chip = column, row
 
+        if self.__current_player == self.__player:
+            self.__communicator.send_message(self.COMMUNICATOR_MESSAGE_1
+                                             + str(column) + "," + str(row)
+                                             + " " + self.COMMUNICATOR_MESSAGE_2
+                                             + "1" if not self.__game_over else
+                                             "0")
+
+        self.__check_winner(column, row)
+
+
+    def __check_winner(self, column, row):
         winner, winning_chips = self.__find_connected_and_winner(column, row)
         x, y = self.__board.get_chip_location(column, row)
-
         if winner is None:
             self.__gui.create_chip_on_board(x, y, self.__current_player)
             self.__toggle_player()
             self.__disable_illegal_columns()
-        elif winner == self.DRAW:
-            self.__gui.create_chip_on_board(x, y, self.__current_player)
-            self.__game_over = True
-            self.__gui.disable_column_buttons()
-            self.__gui.show_game_over_label(self.DRAW)
         else:
             self.__game_over = True
-            self.__gui.create_chip_on_board(x, y, self.__current_player,
-                                            winning_chips=winning_chips,
-                                            board=self.__board, winner=winner)
+            if winner == self.DRAW:
+                self.__gui.create_chip_on_board(x, y, self.__current_player)
+                self.__gui.disable_column_buttons()
+                self.__gui.show_game_over_label(self.DRAW)
+            else:
+                self.__gui.create_chip_on_board(x, y, self.__current_player,
+                                                winning_chips=winning_chips,
+                                                board=self.__board,
+                                                winner=winner)
             # if winner == self.__player:
             #     self.__game_over = True
             #     self.__gui.disable_column_buttons()
@@ -86,12 +129,12 @@ class Game:
         columns = self.__board.get_columns()
         # Check column
         lst = []
-        for j in range(row, min(row + self.LENGTH_OF_WINNING_SEQ,
+        for j in range(row, min(row + self.WINNING_SEQ_LENGTH,
                                 len(columns[column]))):
             if columns[column][j] == self.__current_player:
                 lst.append((column, j))
 
-        if len(lst) == self.LENGTH_OF_WINNING_SEQ:
+        if len(lst) == self.WINNING_SEQ_LENGTH:
             return self.__current_player, lst
 
         # Check row
@@ -99,7 +142,7 @@ class Game:
 
         for j in range(len(rows[row]) - 3):
             flag = True
-            for i in range(self.LENGTH_OF_WINNING_SEQ):
+            for i in range(self.WINNING_SEQ_LENGTH):
                 if rows[row][j + i] != self.__current_player:
                     flag = False
                     break
@@ -107,7 +150,7 @@ class Game:
             if flag:
                 return self.__current_player, [(k, row) for k in
                                                range(j, j +
-                                                     self.LENGTH_OF_WINNING_SEQ
+                                                     self.WINNING_SEQ_LENGTH
                                                      )]
 
         # Check diagonal
@@ -121,7 +164,7 @@ class Game:
                         else:
                             lst.clear()
 
-                if len(lst) == self.LENGTH_OF_WINNING_SEQ:
+                if len(lst) == self.WINNING_SEQ_LENGTH:
                     return self.__current_player, lst
 
         # Check anti-diagonal
@@ -135,7 +178,7 @@ class Game:
                         else:
                             lst.clear()
 
-                if len(lst) == self.LENGTH_OF_WINNING_SEQ:
+                if len(lst) == self.WINNING_SEQ_LENGTH:
                     return self.__current_player, lst
 
         if self.check_draw():
@@ -208,8 +251,26 @@ class Game:
     def set_gui(self, gui):
         self.__gui = gui
 
-    def eat_message(self):
-        pass
+    def eat_message(self, message):
+        if len(message) != 30:
+            raise Exception(self.INVALID_MESSAGE)
+
+        column = int(message[11])
+        expected_row = int(message[13])
+
+        success, row = self.__board.check_add_chip(column, self.PLAYER_ONE
+                                                   if not self.__current_player
+                                                   else self.PLAYER_TWO)
+
+        assert row == expected_row
+
+        if success:
+            check_winner_flag = message[self.CHECK_WINNER_FLAG_INDEX]
+            if check_winner_flag:
+                self.__check_winner(column, row)
+
+        else:
+            raise Exception(self.ADD_CHIP_FAILED)
 
     def get_root(self):
         return self.__gui.get_root()

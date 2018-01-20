@@ -10,7 +10,6 @@ from board import *
 from sys import argv
 
 
-
 if __name__ == '__main__':
     # root = t.Tk()
     # root.resizable(width=False, height=False)
@@ -25,19 +24,13 @@ if __name__ == '__main__':
     #     GUI(root, port, socket.gethostbyname(socket.gethostname()))
     #     root.title("Client")
     # root.mainloop()
-    if (len(argv) == 4 or len(argv) == 3) and 0 <= int(argv[2]) <= 65535:
-        port = int(argv[2])
-        ai = True if argv[1] == "ai" else False
 
+    if 3 <= len(argv) <= 4 and Game.MIN_PORT_VALUE <= int(
+            argv[2]) <= Game.MAX_PORT_VALUE:
         game = Game()
-        ip = None
 
-        if len(argv) == 4:
-            ip = argv[3]
 
-        commune = Communicator(game.get_root(), port, ip)
-        commune.connect()
-        commune.bind_action_to_message(game.eat_message)
+
 
     else:
         # TODO:: Write actual error message

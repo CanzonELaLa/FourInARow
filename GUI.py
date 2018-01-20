@@ -127,12 +127,12 @@ class GUI:
         #                          self.__communicator.send_message("YO"))
 
         # TODO:: These next lines are for mockup, remove them afterwards
-        self.__button = t.Button(self.__root, text="rand move",
-                                 font=("Garamond", 12, "bold"),
-                                 command=yo_things)
-
-        # self.__button.pack()
-        self.__button.place(x=0, y=00)
+        # self.__button = t.Button(self.__root, text="rand move",
+        #                          font=("Garamond", 12, "bold"),
+        #                          command=yo_things)
+        #
+        # # self.__button.pack()
+        # self.__button.place(x=0, y=00)
 
     # TODO:: START REMOVE
     def show_win(self):
@@ -301,12 +301,12 @@ class GUI:
         if flag:
             self.lock = True
             self.disable_column_buttons(False)
-            self.__button.config(state="disabled")
+            # self.__button.config(state="disabled")
             return
         elif self.__get_current_player == self.__get_player():
             self.disable_column_buttons(True)
         self.lock = False
-        self.__button.config(state="active")
+        # self.__button.config(state="active")
 
     # TODO:: keeps disabling same buttons again and again because toggle
     # keeps enabling them

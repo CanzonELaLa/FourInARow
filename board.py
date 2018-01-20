@@ -1,4 +1,3 @@
-import tkinter as t
 import game
 
 DEFAULT_STATE = "EMPTY"
@@ -37,14 +36,13 @@ class Board:
     BOARD_HEIGHT = 6
 
     # TODO:: Make size constants
-    def __init__(self, canvas, create_chip):
+    def __init__(self, canvas):
         self.__columns = []
         self._canvas = canvas
-        self.__create_chip = create_chip
 
-        for i in range(7):
+        for i in range(Board.BOARD_WIDTH):
             column = []
-            for j in range(6):
+            for j in range(Board.BOARD_HEIGHT):
                 column.append(Cell((self.DELTA_WIDTH + self.CELL_PADDING +
                                     (self.CELL_PADDING - 2) * i +
                                     self.DELTA_CELL * i,
@@ -55,21 +53,35 @@ class Board:
             self.__columns.append(column)
 
     def check_add_chip(self, column, player):
+
         # TODO:: User assert on the output of this function
+        # why would this ever happen?
         if self.__columns is None:
             return False, -1
-        designated_row = -1
+        # designated_row = -1
 
-        for row in range(Board.BOARD_HEIGHT - 1, -1, -1):
-            if self.__columns[column][row].get_chip_owner() == game.Game.EMPTY:
-                designated_row = row
-                break
+        # loop to find row to insert chip in selected column (index of first
+        # empty cell in column counting down)
+        # for row in range(Board.BOARD_HEIGHT - 1, -1, -1):
+        #     if self.__columns[column][row].get_chip_owner() == game.Game.EMPTY:
+        #         designated_row = row
+        #         break
+        #
+        # # if no empty cell was found in column
+        # if designated_row == -1:
+        #     return False, -1
+
+        taken_cells = [cell
+                       for cell in self.__columns[column]
+                       if cell.get_chip_owner() != game.Game.EMPTY]
+
+        designated_row = Board.BOARD_HEIGHT - len(taken_cells) - 1\
+            if len(taken_cells) < Board.BOARD_HEIGHT else -1
 
         if designated_row == -1:
             return False, -1
 
-        cell = self.__columns[column][designated_row]
-
+        # puts chip in correct row in column if found
         self.__set_cell(player, column, designated_row)
         # self.__create_chip(cell.get_location()[0],
         #                    cell.get_location()[1], player)
