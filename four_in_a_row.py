@@ -29,9 +29,6 @@ if __name__ == '__main__':
             argv[2]) <= Game.MAX_PORT_VALUE:
         game = Game()
 
-
-
-
     else:
         # TODO:: Write actual error message
         print("error")

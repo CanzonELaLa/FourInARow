@@ -1,8 +1,5 @@
-from game import WinSearch
-
+from board_state import *
 class AI:
-
-    STATES = ["0", "1", "00", "11", "01", "10"]
-
     def find_legal_move(self, g, func, timeout=None):
         pass
+

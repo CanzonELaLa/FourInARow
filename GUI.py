@@ -2,6 +2,7 @@ import tkinter as t
 import game
 from random import randint
 
+
 class GUI:
     """
     Designed to handle the GUI aspects (creating a window, buttons and
@@ -39,7 +40,7 @@ class GUI:
 
     MESSAGE_DISPLAY_TIMEOUT = 250
 
-    def __init__(self, player, make_move, get_current_player, get_player):
+    def __init__(self, player, make_move, get_current_player, get_player, ai):
         """
         Initializes the GUI and connects the communicator.
         :param parent: the tkinter root.
@@ -60,7 +61,7 @@ class GUI:
         self.__column_buttons = []
         self.__column_button_images = [t.PhotoImage(
             file="Images/button_images/button" + str(x) + ".png")
-                                       for x in range(1, 8)]
+            for x in range(1, 8)]
         # TODO:: This is some ugly way of doing this
         self.__labels_images = {}
         self.__labels_images["Your Turn"] = t.PhotoImage(file=self.YOUR_TURN)
@@ -72,13 +73,15 @@ class GUI:
         self.red_piece = t.PhotoImage(file=self.FIRST_PLAYER_CHIP)
         self.blue_piece = t.PhotoImage(file=self.SECOND_PLAYER_CHIP)
         self.red_piece_glowing = t.PhotoImage(file=self.FIRST_PLAYER_WIN_CHIP)
-        self.blue_piece_glowing = t.PhotoImage(file=self.SECOND_PLAYER_WIN_CHIP)
+        self.blue_piece_glowing = t.PhotoImage(
+            file=self.SECOND_PLAYER_WIN_CHIP)
 
         # TODO:: Refactor to dictionary
         self.__your_label = None
         self.__enemy_label = None
         self.__place_widgets()
         self.lock = False
+        self.__ai = False
         # self.__game = Game()
         # self.__game.set_canvas(self._canvas)
         # self.__game.set_gui(self)
@@ -120,19 +123,21 @@ class GUI:
             button.place(x=self.DELTA_WIDTH + self.CELL_PADDING +
                            (self.CELL_PADDING - 2) * i + self.DELTA_CELL * i,
                          y=10)
+            if self.__ai:
+                button.config(state="disabled")
 
-        # self.__button = t.Button(self._parent, text="YO",
-        #                          font=("Garamond", 20, "bold"),
-        #                          command=lambda:
-        #                          self.__communicator.send_message("YO"))
+                # self.__button = t.Button(self._parent, text="YO",
+                #                          font=("Garamond", 20, "bold"),
+                #                          command=lambda:
+                #                          self.__communicator.send_message("YO"))
 
-        # TODO:: These next lines are for mockup, remove them afterwards
-        # self.__button = t.Button(self.__root, text="rand move",
-        #                          font=("Garamond", 12, "bold"),
-        #                          command=yo_things)
-        #
-        # # self.__button.pack()
-        # self.__button.place(x=0, y=00)
+                # TODO:: These next lines are for mockup, remove them afterwards
+                # self.__button = t.Button(self.__root, text="rand move",
+                #                          font=("Garamond", 12, "bold"),
+                #                          command=yo_things)
+                #
+                # # self.__button.pack()
+                # self.__button.place(x=0, y=00)
 
     # TODO:: START REMOVE
     def show_win(self):
@@ -160,6 +165,7 @@ class GUI:
                                   self.CANVAS_HEIGHT / 2,
                                   image=self.__labels_images["Draw"],
                                   anchor=self.CENTER_ANCHOR)
+
     # TODO:: END REMOVE
 
     def show_game_over_label(self, winning_player):
@@ -191,31 +197,34 @@ class GUI:
                 button.config(state="disabled")
 
     def toggle_column_buttons(self, activate):
-        if not activate:
-            # Remove other label if it is still present
-            self._canvas.delete(self.__your_label)
-            self.disable_column_buttons()
-            self.__enemy_label = \
-                self._canvas.create_image(self.CANVAS_WIDTH / 2,
-                                          self.CANVAS_HEIGHT / 2,
-                                          image=self.__labels_images[
-                                              "Enemy Turn"],
-                                          anchor=self.CENTER_ANCHOR)
-            self.__root.after(self.LABEL_LIFE_TIME_MS,
-                              lambda: self._canvas.delete(self.__enemy_label))
-        else:
-            # Remove other label if it is still present
-            self._canvas.delete(self.__enemy_label)
-            for button in self.__column_buttons:
-                button.config(state="active")
-            self.__your_label = \
-                self._canvas.create_image(self.CANVAS_WIDTH / 2,
-                                          self.CANVAS_HEIGHT / 2,
-                                          image=self.__labels_images[
-                                              "Your Turn"],
-                                          anchor=self.CENTER_ANCHOR)
-            self.__root.after(self.LABEL_LIFE_TIME_MS,
-                              lambda: self._canvas.delete(self.__your_label))
+        if not self.__ai:
+            if not activate:
+                # Remove other label if it is still present
+                self._canvas.delete(self.__your_label)
+                self.disable_column_buttons()
+                self.__enemy_label = \
+                    self._canvas.create_image(self.CANVAS_WIDTH / 2,
+                                              self.CANVAS_HEIGHT / 2,
+                                              image=self.__labels_images[
+                                                  "Enemy Turn"],
+                                              anchor=self.CENTER_ANCHOR)
+                self.__root.after(self.LABEL_LIFE_TIME_MS,
+                                  lambda: self._canvas.delete(
+                                      self.__enemy_label))
+            else:
+                # Remove other label if it is still present
+                self._canvas.delete(self.__enemy_label)
+                for button in self.__column_buttons:
+                    button.config(state="active")
+                self.__your_label = \
+                    self._canvas.create_image(self.CANVAS_WIDTH / 2,
+                                              self.CANVAS_HEIGHT / 2,
+                                              image=self.__labels_images[
+                                                  "Your Turn"],
+                                              anchor=self.CENTER_ANCHOR)
+                self.__root.after(self.LABEL_LIFE_TIME_MS,
+                                  lambda: self._canvas.delete(
+                                      self.__your_label))
 
     # TODO:: This is a mockup function
     def __make_random_move(self):

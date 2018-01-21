@@ -32,9 +32,9 @@ steps_to_completion_of_sequence will be calculated by predicting
 
 
 def backtrack():
-    def helper(columns, ranking_dict, depth):
+    def helper(columns, ranking_dict, depth, pos_column):
         # Recursive function
-        # Base: reached depth or win achieved
+        # Base: reached depth or win achieved or timeout reached
         # Try every move until depth
         # Rank each possibility by 3 * num of len 3 + 2 * num of len 2 etc.
         # Give score of +1000 if it achieved a win
