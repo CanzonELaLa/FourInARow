@@ -2,6 +2,7 @@ from itertools import permutations
 
 
 class BoardAnalyzer:
+    """ Analyzes the board """
     # Re-purposed code from ex5
 
     EMPTY_STRING = ""
@@ -10,16 +11,15 @@ class BoardAnalyzer:
     #                      "0303", "3300", "3003", "3030", "3330", "3303",
     #                      "3033", "0333"]
 
-
     def __init__(self):
         self.__player_one_states = {1: permutations(["0", "3", "3", "3"], 4),
-                             2: permutations(["0", "0", "3", "3"], 4),
-                             3: permutations(["0", "0", "0", "3"], 4),
+                                    2: permutations(["0", "0", "3", "3"], 4),
+                                    3: permutations(["0", "0", "0", "3"], 4),
                                     1000: "0000"}
 
         self.__player_two_states = {1: permutations(["1", "3", "3", "3"], 4),
-                             2: permutations(["1", "1", "3", "3"], 4),
-                             3: permutations(["1", "1", "1", "3"], 4),
+                                    2: permutations(["1", "1", "3", "3"], 4),
+                                    3: permutations(["1", "1", "1", "3"], 4),
                                     1000: "1111"}
 
     def get_matrix_rows(self, matrix, reverse=False):

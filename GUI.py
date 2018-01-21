@@ -32,8 +32,8 @@ class GUI:
     # File constants
     OWN_PLAYER_CHIP = "Images/white_chip.png"
     OTHER_PLAYER_CHIP = "Images/black_chip.png"
-    FIRST_PLAYER_WIN_CHIP = "Images/white_chip_glow.png"
-    SECOND_PLAYER_WIN_CHIP = "Images/black_chip_glow.png"
+    OWN_PLAYER_WIN_CHIP = "Images/white_chip_glow.png"
+    OTHER_PLAYER_WIN_CHIP = "Images/black_chip_glow.png"
     YOUR_TURN = "Images/Your turn.gif"
     ENEMY_TURN = "Images/Enemy turn.gif"
     BG_IMAGE = "Images/bg2.png"
@@ -78,160 +78,118 @@ class GUI:
 
         self.white_piece = t.PhotoImage(file=self.OWN_PLAYER_CHIP)
         self.black_piece = t.PhotoImage(file=self.OTHER_PLAYER_CHIP)
-        self.red_piece_glowing = t.PhotoImage(file=self.FIRST_PLAYER_WIN_CHIP)
-        self.blue_piece_glowing = t.PhotoImage(
-            file=self.SECOND_PLAYER_WIN_CHIP)
+        self.white_piece_glowing = t.PhotoImage(file=self.OWN_PLAYER_WIN_CHIP)
+        self.black_piece_glowing = t.PhotoImage(
+            file=self.OTHER_PLAYER_WIN_CHIP)
 
         # TODO:: Refactor to dictionary
         self.__your_label = None
         self.__enemy_label = None
         self.__place_widgets()
         self.lock = False
-        # self.__game = Game()
-        # self.__game.set_canvas(self._canvas)
-        # self.__game.set_gui(self)
-        # if len(argv) == 4:
-        #     self.__game.set_current_player(self.__game.PLAYER_TWO)
-        #     self.__game.set_player(self.__game.PLAYER_TWO)
 
     def __place_widgets(self):
+        """
+        Placed buttons and labels on board
+        """
+
         def create_add_chip_func(j):
-            def add_chip_func():
-                # success = \
-                #     self.__game.get_board().add_chip(i, game.Game.PLAYER_ONE,
-                #                                      self._canvas)
-                success = self.__make_move(j)
-                # Disable buttons
-                # self.toggle_column_buttons(False)
-                return success
+            """ :param j: Column number
+                :return: Function to call make_move with number stored in
+                         memory
+            """
+            return lambda: self.__make_move(j)
 
-            return add_chip_func
-
-        # do yo thing
-        def yo_things():
-            # if self.__game.get_current_player() == game.Game.PLAYER_ONE:
-            #     self.__game.set_current_player(game.Game.PLAYER_TWO)
-            # else:
-            #     self.__game.set_current_player(game.Game.PLAYER_ONE)
-            self.__make_random_move()
-            # self.toggle_column_buttons(True)
-
+        # Create the 7 buttons
         for i in range(7):
             button = t.Button(self.__root)
             button.config(image=self.__column_button_images[i],
                           width=self.COLUMN_BUTTON_SIZE,
-                          height=self.COLUMN_BUTTON_SIZE)
-            button.config(borderwidth=0)
-            button.config(relief="raised")
-            self.__column_buttons.append(button)
-            button.config(command=create_add_chip_func(i))
+                          height=self.COLUMN_BUTTON_SIZE,
+                          borderwidth=0, relief="raised",
+                          command=create_add_chip_func(i))
             button.place(x=self.DELTA_WIDTH + self.CELL_PADDING +
                            (self.CELL_PADDING - 2) * i + self.DELTA_CELL * i,
                          y=10)
-            if self.__ai_flag:
+            self.__column_buttons.append(button)
+            if self.__ai_flag:  # If the AI is playing, disable the buttons
                 button.config(state="disabled")
 
-                # self.__button = t.Button(self._parent, text="YO",
-                #                          font=("Garamond", 20, "bold"),
-                #                          command=lambda:
-                #                          self.__communicator.send_message("YO"))
-
-                # TODO:: These next lines are for mockup, remove them afterwards
-                # self.__button = t.Button(self.__root, text="rand move",
-                #                          font=("Garamond", 12, "bold"),
-                #                          command=yo_things)
-                #
-                # # self.__button.pack()
-                # self.__button.place(x=0, y=00)
-
-    # TODO:: START REMOVE
-    def show_win(self):
-        self._canvas.delete(self.__your_label)
-        self._canvas.delete(self.__enemy_label)
-        self._canvas.create_image(self.CANVAS_WIDTH / 2,
-                                  self.CANVAS_HEIGHT / 2,
-                                  image=self.__labels_images["You Win"],
-                                  anchor=self.CENTER_ANCHOR)
-
-    def show_lose(self):
-        self.disable_column_buttons()
-        self._canvas.delete(self.__your_label)
-        self._canvas.delete(self.__enemy_label)
-        self._canvas.create_image(self.CANVAS_WIDTH / 2,
-                                  self.CANVAS_HEIGHT / 2,
-                                  image=self.__labels_images["You Lose"],
-                                  anchor=self.CENTER_ANCHOR)
-
-    def show_draw(self):
-        self.disable_column_buttons()
-        self._canvas.delete(self.__your_label)
-        self._canvas.delete(self.__enemy_label)
-        self._canvas.create_image(self.CANVAS_WIDTH / 2,
-                                  self.CANVAS_HEIGHT / 2,
-                                  image=self.__labels_images["Draw"],
-                                  anchor=self.CENTER_ANCHOR)
-
-    # TODO:: END REMOVE
-
     def show_game_over_label(self, winning_player):
+        """  :param winning_player: Player identifying int """
         # TODO:: Change toggle so it can be used here as well
+
+        # Disable the buttons and delete turn labels
         self.disable_column_buttons()
         self._canvas.delete(self.__your_label)
         self._canvas.delete(self.__enemy_label)
+
+        # Decide which label to show and show it
+        image = None
         if winning_player == self.__player:
-            self._canvas.create_image(self.CANVAS_WIDTH / 2,
-                                      self.CANVAS_HEIGHT / 2,
-                                      image=self.__labels_images["You Win"],
-                                      anchor=self.CENTER_ANCHOR)
+            image = self.__labels_images["You Win"]
         elif winning_player == game.Game.DRAW:
-            self._canvas.create_image(self.CANVAS_WIDTH / 2,
-                                      self.CANVAS_HEIGHT / 2,
-                                      image=self.__labels_images["Draw"],
-                                      anchor=self.CENTER_ANCHOR)
+            image = self.__labels_images["Draw"]
         elif winning_player != self.__player:
-            self._canvas.create_image(self.CANVAS_WIDTH / 2,
-                                      self.CANVAS_HEIGHT / 2,
-                                      image=self.__labels_images["You Lose"],
-                                      anchor=self.CENTER_ANCHOR)
+            image = self.__labels_images["You Lose"]
+
+        self._canvas.create_image(self.CANVAS_WIDTH / 2,
+                                  self.CANVAS_HEIGHT / 2,
+                                  anchor=self.CENTER_ANCHOR,
+                                  image=image)
 
     def disable_column_buttons(self, enable=False):
+        """ :param enable: Enable/Disable the buttons """
         for button in self.__column_buttons:
             if enable:
                 button.config(state="active")
             else:
                 button.config(state="disabled")
 
-    def toggle_column_buttons(self, activate):
-        if not self.__ai_flag:
-            if not activate:
+    def end_turn_switch_player(self, own_turn):
+        """ :param own_turn: Whether or not this is the player's turn """
+        # So long as the AI isn't playing
+        if not self.__ai_flag:  # If own turn ended
+            if not own_turn:
                 # Remove other label if it is still present
                 self._canvas.delete(self.__your_label)
+
+                # Toggle the buttons
                 self.disable_column_buttons()
+
+                # Create label
                 self.__enemy_label = \
                     self._canvas.create_image(self.CANVAS_WIDTH / 2,
                                               self.CANVAS_HEIGHT / 2,
                                               image=self.__labels_images[
                                                   "Enemy Turn"],
                                               anchor=self.CENTER_ANCHOR)
+
+                # Set destroy time for label
                 self.__root.after(self.LABEL_LIFE_TIME_MS,
                                   lambda: self._canvas.delete(
                                       self.__enemy_label))
-            else:
+            else:  # If own turn starts
                 # Remove other label if it is still present
                 self._canvas.delete(self.__enemy_label)
-                for button in self.__column_buttons:
-                    button.config(state="active")
+
+                # Toggle the buttons
+                self.disable_column_buttons(True)
+
+                # Create label
                 self.__your_label = \
                     self._canvas.create_image(self.CANVAS_WIDTH / 2,
                                               self.CANVAS_HEIGHT / 2,
                                               image=self.__labels_images[
                                                   "Your Turn"],
                                               anchor=self.CENTER_ANCHOR)
+
+                # Set destroy time for label
                 self.__root.after(self.LABEL_LIFE_TIME_MS,
                                   lambda: self._canvas.delete(
                                       self.__your_label))
 
-    # TODO:: This is a mockup function
+    # TODO:: Fallback ai in case of w.c.s.
     def __make_random_move(self):
         col = randint(0, 6)
         # while not self.__game.get_board().add_chip(col, game.Game.PLAYER_ONE,
@@ -244,91 +202,126 @@ class GUI:
                 col = randint(0, 6)
 
     def get_root(self):
+        """ Getter for root """
         return self.__root
 
     def get_canvas(self):
+        """ Getter for canvas """
         return self._canvas
 
     def create_chip_on_board(self, x, y, current_player, win=False,
                              winning_chips=None, board=None, winner=None):
-        if win:
+        """ :param x: Width pixel location
+            :param y: Height pixel location
+            :param current_player: Chip's owner
+            :param win: Whether or not this is for a win/lose condition
+                        (disable animation)
+            :param winning_chips: List of winning chips to switch to glowing
+            :param board: Board reference for location references later on
+            :param winner: Winner of game """
+        if win:  # Win condition
             if current_player == self.__player:
-                chip = self.red_piece_glowing
+                chip = self.white_piece_glowing
             else:
-                chip = self.blue_piece_glowing
-        else:
+                chip = self.black_piece_glowing
+        else:  # Still playing
             if current_player == self.__player:
                 chip = self.white_piece
             else:
                 chip = self.black_piece
 
         if not win:  # Create chip and animate it falling
-            id = self._canvas.create_image(x, 10 + self.DELTA_CELL, image=chip,
-                                           anchor=self.NW_ANCHOR)
+            chip_widget = self._canvas.create_image(x, 10 + self.DELTA_CELL,
+                                                    image=chip,
+                                                    anchor=self.NW_ANCHOR)
             # can change 10 to 10  + DELTA_CELL to start IN THE BOARD
             # instead of atop it
 
-            animate = self.__get_animation_func(id, y, self.STARTING_SPEED,
-                                                winning_chips, board, winner)
-            animate(0)
-        else:  # Set chips to glowing ones
+            # Animate the chip falling
+            self.__get_animation_func(chip_widget, y,
+                                      self.STARTING_SPEED,
+                                      winning_chips, board, winner)(0)
+
+        else:  # Set chips to glowing ones, no animation
             self._canvas.create_image(x, y, image=chip,
                                       anchor=self.NW_ANCHOR)
 
     def __get_animation_func(self, obj_id, final_y, vel, winning_chips,
                              board, winner):
+        """ Creates an animation function with stored data
+            :param obj_id: What widget to animate
+            :param final_y: Final height
+            :param vel: Starting velocity
+            :param winning_chips: Chips to animate if any are needed
+            :param board: Board for references later on
+            :param winner: Winner to pass on
+            :return: Animation function """
         def animate_fall(time_elapsed):
-            # self._canvas.move(obj_id, 0,
-            #                   vel + acceleration ** 2 /
-            #                   self.ACCEL_NORMALIZATION)
+            """ Recursive function for animation
+                :param time_elapsed: Time since start animation """
+
+            # Move the obj down by realistic amount given time elapsed
             self._canvas.move(obj_id, 0,
                               vel * time_elapsed +
                               self.ACCELERATION * time_elapsed ** 2)
+
+            # Get current position of obj
             x0, y0 = self._canvas.coords(obj_id)
-            if y0 >= final_y:
+            if y0 >= final_y:  # If final flace reached
+                # Set the final location
                 self._canvas.coords(obj_id, x0, final_y)
+
+                # Unlock buttons
                 self.lock_buttons_for_animation(False)
+
+                # If this is a winning move, make proper chips glow and show
+                # label
                 if winning_chips is not None:
                     on_win_condition(winning_chips, winner)
-            else:
+            else:  # Continue animation
                 time_elapsed += self.ANIMATION_REFRESH * \
                                 self.ACCEL_NORMALIZATION
                 self._canvas.after(self.ANIMATION_REFRESH, animate_fall,
                                    time_elapsed)
 
         def on_win_condition(winning_chips, winner):
-            self.color_winning_chips(self.__get_current_player(),
+            """ :param winning_chips: Winning chips to make glow
+                :param winner: Who won the game """
+            # Color all relevant chips
+            self.color_winning_chips(winner,
                                      winning_chips, board)
-            if winner == self.__player:
-                self.disable_column_buttons()
-                # self.show_win()
-                self.show_game_over_label(winner)
-            else:
-                self.disable_column_buttons()
-                # self.show_lose()
-                self.show_game_over_label(winner)
 
+            # Disable all buttons
+            self.disable_column_buttons()
+
+            # Show winner label
+            self.show_game_over_label(winner)
+
+        # Lock buttons for animation
         self.lock_buttons_for_animation(True)
         return animate_fall
 
     def lock_buttons_for_animation(self, flag):
+        """ :param flag: Lock or unlock """
         if flag:
             self.lock = True
             self.disable_column_buttons(False)
-            # self.__button.config(state="disabled")
             return
-        elif self.__get_current_player == self.__player:
+        elif self.__get_current_player() == self.__player and not \
+                self.__ai_flag:
             self.disable_column_buttons(True)
         self.lock = False
-        # self.__button.config(state="active")
 
     # TODO:: keeps disabling same buttons again and again because toggle
     # keeps enabling them
     def disable_illegal_button(self, col):
+        """ :param col: Button column to disable """
         self.__column_buttons[col].config(state="disabled")
 
     def color_winning_chips(self, player, chips, board):
-        # TODO:: Make it so that the coloring happens only after animation end.
+        """ :param player: Winning player
+            :param chips: List of chips to make glow
+            :param board: Board reference """
         for x, y in chips:
             cell = board.get_cell_at(x, y)
             self.create_chip_on_board(cell.get_location()[0],
