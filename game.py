@@ -2,7 +2,6 @@ from board import *
 from communicator import *
 from sys import argv
 from GUI import GUI
-from board_state import *
 from ai import AI
 
 
@@ -45,18 +44,19 @@ class Game:
             self.__enemy_player = self.PLAYER_ONE
             self.__current_player = self.__enemy_player
 
-        ai_flag = False
+        self.__ai_flag = False
         if argv[1] == "ai":
             self.__ai = AI()
-            ai_flag = True
+            self.__ai_flag = True
 
         self.__gui = GUI(self.__player, self.__make_move,
-                         self.get_current_player, self.get_player, ai_flag)
+                         self.get_current_player, self.get_player,
+                         self.__ai_flag)
 
         if self.__player == self.PLAYER_TWO:
             self.__gui.disable_column_buttons()
 
-        self.__board = Board(self.__gui.get_canvas())
+        self.__board = Board(self.get_current_player, self.get_player)
         self.__game_over = False
 
         # TODO:: Ugly code, find a workaround
@@ -72,6 +72,10 @@ class Game:
         self.__communicator = Communicator(self.__gui.get_root(), port, ip)
         self.__communicator.connect()
         self.__communicator.bind_action_to_message(self.eat_message)
+
+        # If AI and server start the game
+        if self.__ai_flag and self.__player == 0:
+            self.__ai.find_legal_move(game, self.__make_move)
 
         self.__gui.get_root().mainloop()
 
@@ -96,11 +100,14 @@ class Game:
                                              + " " + self.COMMUNICATOR_MESSAGE_2
                                              + "1" if not self.__game_over else
                                              "0")
+        elif self.__ai_flag:
+            self.__ai.find_legal_move(self, self.__make_move)
 
         self.__check_winner(column, row)
 
     def __check_winner(self, column, row):
-        winner, winning_chips = self.__find_connected_and_winner(column, row)
+        winner, winning_chips = self.__board.find_connected_and_winner(column,
+                                                                       row)
         x, y = self.__board.get_chip_location(column, row)
         if winner is None:
             self.__gui.create_chip_on_board(x, y, self.__current_player)
@@ -126,66 +133,66 @@ class Game:
                 #     self.__gui.disable_column_buttons()
                 #     self.__gui.show_lose()
 
-    def __find_connected_and_winner(self, column, row):
-        columns = self.__board.get_columns()
-        # Check column
-        lst = []
-        for j in range(row, min(row + self.WINNING_SEQ_LENGTH,
-                                len(columns[column]))):
-            if columns[column][j] == self.__current_player:
-                lst.append((column, j))
-
-        if len(lst) == self.WINNING_SEQ_LENGTH:
-            return self.__current_player, lst
-
-        # Check row
-        rows = Board_State.transpose_matrix(self.__board.get_columns())
-
-        for j in range(len(rows[row]) - 3):
-            flag = True
-            for i in range(self.WINNING_SEQ_LENGTH):
-                if rows[row][j + i] != self.__current_player:
-                    flag = False
-                    break
-
-            if flag:
-                return self.__current_player, [(k, row) for k in
-                                               range(j, j +
-                                                     self.WINNING_SEQ_LENGTH
-                                                     )]
-
-        # Check diagonal
-        for indices_diff in range(len(rows) - 1, -len(columns), -1):
-            lst = []
-            for i in range(len(rows)):
-                for j in range(len(columns)):
-                    if indices_diff == i - j:
-                        if columns[j][i] == self.__current_player:
-                            lst.append((j, i))
-                        else:
-                            lst.clear()
-
-                if len(lst) == self.WINNING_SEQ_LENGTH:
-                    return self.__current_player, lst
-
-        # Check anti-diagonal
-        for indices_sum in range(len(rows) + len(columns) - 1):
-            lst = []
-            for i in range(len(rows)):
-                for j in range(len(columns)):
-                    if indices_sum == i + j:
-                        if columns[j][i] == self.__current_player:
-                            lst.append((j, i))
-                        else:
-                            lst.clear()
-
-                if len(lst) == self.WINNING_SEQ_LENGTH:
-                    return self.__current_player, lst
-
-        if self.check_draw():
-            return self.DRAW, None
-
-        return None, None
+    # def __find_connected_and_winner(self, column, row):
+    #     columns = self.__board.get_columns()
+    #     # Check column
+    #     lst = []
+    #     for j in range(row, min(row + self.WINNING_SEQ_LENGTH,
+    #                             len(columns[column]))):
+    #         if columns[column][j] == self.__current_player:
+    #             lst.append((column, j))
+    #
+    #     if len(lst) == self.WINNING_SEQ_LENGTH:
+    #         return self.__current_player, lst
+    #
+    #     # Check row
+    #     rows = BoardAnalyzer.transpose_matrix(self.__board.get_columns())
+    #
+    #     for j in range(len(rows[row]) - 3):
+    #         flag = True
+    #         for i in range(self.WINNING_SEQ_LENGTH):
+    #             if rows[row][j + i] != self.__current_player:
+    #                 flag = False
+    #                 break
+    #
+    #         if flag:
+    #             return self.__current_player, [(k, row) for k in
+    #                                            range(j, j +
+    #                                                  self.WINNING_SEQ_LENGTH
+    #                                                  )]
+    #
+    #     # Check diagonal
+    #     for indices_diff in range(len(rows) - 1, -len(columns), -1):
+    #         lst = []
+    #         for i in range(len(rows)):
+    #             for j in range(len(columns)):
+    #                 if indices_diff == i - j:
+    #                     if columns[j][i] == self.__current_player:
+    #                         lst.append((j, i))
+    #                     else:
+    #                         lst.clear()
+    #
+    #             if len(lst) == self.WINNING_SEQ_LENGTH:
+    #                 return self.__current_player, lst
+    #
+    #     # Check anti-diagonal
+    #     for indices_sum in range(len(rows) + len(columns) - 1):
+    #         lst = []
+    #         for i in range(len(rows)):
+    #             for j in range(len(columns)):
+    #                 if indices_sum == i + j:
+    #                     if columns[j][i] == self.__current_player:
+    #                         lst.append((j, i))
+    #                     else:
+    #                         lst.clear()
+    #
+    #             if len(lst) == self.WINNING_SEQ_LENGTH:
+    #                 return self.__current_player, lst
+    #
+    #     if self.check_draw():
+    #         return self.DRAW, None
+    #
+    #     return None, None
 
     def __disable_illegal_columns(self):
         columns = self.__board.get_columns()
@@ -198,15 +205,16 @@ class Game:
             if illegal_column:
                 self.__gui.disable_illegal_button(i)
 
-    def check_draw(self):
-        board_columns = self.__board.get_columns()
-        draw_flag = True
-        for col in range(len(board_columns)):
-            for row in range(len(board_columns[col])):
-                if board_columns[col][row] == self.EMPTY:
-                    draw_flag = False
-
-        return draw_flag
+    #
+    # def check_draw(self):
+    #     board_columns = self.__board.get_columns()
+    #     draw_flag = True
+    #     for col in range(len(board_columns)):
+    #         for row in range(len(board_columns[col])):
+    #             if board_columns[col][row] == self.EMPTY:
+    #                 draw_flag = False
+    #
+    #     return draw_flag
 
     def __toggle_player(self):
         self.__current_player = self.PLAYER_TWO \
@@ -227,7 +235,7 @@ class Game:
         #         return self.DRAW
         #
         # return None
-        return self.__find_connected_and_winner(
+        return self.__board.find_connected_and_winner(
             self.__last_inserted_chip[0], self.__last_inserted_chip[1])[0]
 
     def get_player_at(self, row, col):
@@ -266,6 +274,7 @@ class Game:
         assert row == expected_row
 
         if success:
+            self.__last_inserted_chip = column, row
             check_winner_flag = message[self.CHECK_WINNER_FLAG_INDEX]
             if check_winner_flag:
                 self.__check_winner(column, row)
@@ -273,5 +282,11 @@ class Game:
         else:
             raise Exception(self.ADD_CHIP_FAILED)
 
+        if self.__ai_flag:
+            self.__ai.find_legal_move(self, self.__make_move)
+
     def get_root(self):
         return self.__gui.get_root()
+
+    def get_last_inserted_chip(self):
+        return self.__last_inserted_chip

@@ -45,6 +45,8 @@ class GUI:
         Initializes the GUI and connects the communicator.
         :param parent: the tkinter root.
         """
+
+        self.__ai = ai
         self.__root = t.Tk()
         self.__root.resizable(width=False, height=False)
         self._canvas = t.Canvas(self.__root, width=self.CANVAS_WIDTH,
@@ -81,7 +83,6 @@ class GUI:
         self.__enemy_label = None
         self.__place_widgets()
         self.lock = False
-        self.__ai = False
         # self.__game = Game()
         # self.__game.set_canvas(self._canvas)
         # self.__game.set_gui(self)

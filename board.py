@@ -1,13 +1,13 @@
 import game
+from board_analyzer import *
 
 DEFAULT_STATE = "EMPTY"
 
 
 class Cell:
-    def __init__(self, location, board):
-        self.__chip_owner = game.Game.EMPTY
+    def __init__(self, location, player=None):
+        self.__chip_owner = game.Game.EMPTY if player is None else player
         self.__location = location
-        self.__board = board
 
     def get_location(self):
         return self.__location
@@ -35,10 +35,13 @@ class Board:
     BOARD_WIDTH = 7
     BOARD_HEIGHT = 6
 
+    WINNING_SEQ_LENGTH = 4
+
     # TODO:: Make size constants
-    def __init__(self, canvas):
+    def __init__(self, get_current_player, get_player):
         self.__columns = []
-        self._canvas = canvas
+        self.__get_current_player = get_current_player
+        self.__get_player = get_player
 
         for i in range(Board.BOARD_WIDTH):
             column = []
@@ -48,7 +51,7 @@ class Board:
                                     self.DELTA_CELL * i,
                                     self.DELTA_HEIGHT + self.CELL_PADDING +
                                     (self.CELL_PADDING - 2) * j +
-                                    self.DELTA_CELL * j), self))
+                                    self.DELTA_CELL * j)))
             # column.reverse()
             self.__columns.append(column)
 
@@ -75,7 +78,7 @@ class Board:
                        for cell in self.__columns[column]
                        if cell.get_chip_owner() != game.Game.EMPTY]
 
-        designated_row = Board.BOARD_HEIGHT - len(taken_cells) - 1\
+        designated_row = Board.BOARD_HEIGHT - len(taken_cells) - 1 \
             if len(taken_cells) < Board.BOARD_HEIGHT else -1
 
         if designated_row == -1:
@@ -116,8 +119,9 @@ class Board:
         return columns
 
     def get_columns_as_str(self):
-        columns = [[str(self.__columns[col][cell]) for cell in range(len(
-            self.__columns[col]))] for col in range(len(self.__columns))]
+        columns = [[str(self.__columns[col][cell])
+                    for cell in range(len(self.__columns[col]))]
+                   for col in range(len(self.__columns))]
 
         return columns
 
@@ -127,17 +131,81 @@ class Board:
     def __repr__(self):
         return self.__columns
 
-#
-#
-# class Chip:
-#     def __init__(self, player):
-#         self.__player = player
-#
-#     def get_player(self):
-#         return self.__player
-#
-#     def set_player(self, player):
-#         self.__player = player
-#
-#     def __repr__(self):
-#         return str(self.__player)
+    def find_connected_and_winner(self, column, row):
+        columns = self.__columns
+        # Check column
+        lst = []
+        for j in range(row, min(row + self.WINNING_SEQ_LENGTH,
+                                len(columns[column]))):
+            if columns[column][j].get_chip_owner() == \
+                    self.__get_current_player():
+                lst.append((column, j))
+
+        if len(lst) == self.WINNING_SEQ_LENGTH:
+            return self.__get_current_player(), lst
+
+        # Check row
+        rows = BoardAnalyzer.transpose_matrix(self.__columns)
+
+        for j in range(len(rows[row]) - 3):
+            flag = True
+            for i in range(self.WINNING_SEQ_LENGTH):
+                if rows[row][j + i].get_chip_owner() != \
+                        self.__get_current_player():
+                    flag = False
+                    break
+
+            if flag:
+                return self.__get_current_player(), \
+                       [(k, row) for k in range(j, j +
+                                                self.WINNING_SEQ_LENGTH)]
+
+        # Check diagonal
+        for indices_diff in range(len(rows) - 1, -len(columns), -1):
+            lst = []
+            for i in range(len(rows)):
+                for j in range(len(columns)):
+                    if indices_diff == i - j:
+                        if columns[j][i].get_chip_owner() == \
+                                self.__get_current_player():
+                            lst.append((j, i))
+                        else:
+                            lst.clear()
+
+                if len(lst) == self.WINNING_SEQ_LENGTH:
+                    return self.__get_current_player(), lst
+
+        # Check anti-diagonal
+        for indices_sum in range(len(rows) + len(columns) - 1):
+            lst = []
+            for i in range(len(rows)):
+                for j in range(len(columns)):
+                    if indices_sum == i + j:
+                        if columns[j][i].get_chip_owner() == \
+                                self.__get_current_player():
+                            lst.append((j, i))
+                        else:
+                            lst.clear()
+
+                if len(lst) == self.WINNING_SEQ_LENGTH:
+                    return self.__get_current_player(), lst
+
+        if self.check_draw():
+            return game.Game.DRAW, None
+
+        return None, None
+
+    def check_draw(self):
+        draw_flag = True
+        for col in range(len(self.__columns)):
+            for row in range(len(self.__columns[col])):
+                if self.__columns[col][row].get_chip_owner() == 3:
+                    draw_flag = False
+
+        return draw_flag
+
+    def set_columns(self, str_columns):
+        # For backtracking in AI
+        self.__columns = [[Cell(None, int(str_columns[col][cell]))
+                           for cell in range(len(str_columns[col]))]
+                          for col in range(len(str_columns))]
