@@ -38,10 +38,9 @@ class Board:
     WINNING_SEQ_LENGTH = 4
 
     # TODO:: Make size constants
-    def __init__(self, get_current_player, get_player):
+    def __init__(self, get_current_player):
         self.__columns = []
         self.__get_current_player = get_current_player
-        self.__get_player = get_player
 
         for i in range(Board.BOARD_WIDTH):
             column = []

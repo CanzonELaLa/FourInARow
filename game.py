@@ -50,13 +50,12 @@ class Game:
             self.__ai_flag = True
 
         self.__gui = GUI(self.__player, self.__make_move,
-                         self.get_current_player, self.get_player,
-                         self.__ai_flag)
+                         self.get_current_player, self.__ai_flag)
 
         if self.__player == self.PLAYER_TWO:
             self.__gui.disable_column_buttons()
 
-        self.__board = Board(self.get_current_player, self.get_player)
+        self.__board = Board(self.get_current_player)
         self.__game_over = False
 
         # TODO:: Ugly code, find a workaround

@@ -9,23 +9,29 @@ class GUI:
     pop-ups. Also initializes the communicator object.
     """
 
+    # Animation constants
     ANIMATION_REFRESH = 41
     ACCEL_NORMALIZATION = 0.025
     ACCELERATION = 9
     STARTING_SPEED = 0
 
+    # Positioning constants
     DELTA_HEIGHT = 130
     DELTA_WIDTH = 180
     DELTA_CELL = 109
     CELL_PADDING = 13
+    CENTER_ANCHOR = "center"
+    NW_ANCHOR = "nw"
 
+    # Main gui constants
     COLUMN_BUTTON_SIZE = 92
     CANVAS_HEIGHT = 860
     CANVAS_WIDTH = 1200
     LABEL_LIFE_TIME_MS = 1500
 
-    FIRST_PLAYER_CHIP = "Images/white_chip.png"
-    SECOND_PLAYER_CHIP = "Images/black_chip.png"
+    # File constants
+    OWN_PLAYER_CHIP = "Images/white_chip.png"
+    OTHER_PLAYER_CHIP = "Images/black_chip.png"
     FIRST_PLAYER_WIN_CHIP = "Images/white_chip_glow.png"
     SECOND_PLAYER_WIN_CHIP = "Images/black_chip_glow.png"
     YOUR_TURN = "Images/Your turn.gif"
@@ -35,18 +41,17 @@ class GUI:
     LOSE_LABEL = "Images/You lose.png"
     DRAW_LABEL = "Images/Draw.png"
 
-    CENTER_ANCHOR = "center"
-    NW_ANCHOR = "nw"
-
-    MESSAGE_DISPLAY_TIMEOUT = 250
-
-    def __init__(self, player, make_move, get_current_player, get_player, ai):
+    def __init__(self, player, make_move, get_current_player, ai):
+        """ Initialized the GUI
+            :param player: 0 or 1 depending on client/server
+            :param make_move: func that makes a move on the board
+            :param get_current_player: Func that gets the current player of
+                                       the Game.
+            :param ai: Whether or not the player is ai
         """
-        Initializes the GUI and connects the communicator.
-        :param parent: the tkinter root.
-        """
+        self.__ai_flag = ai
 
-        self.__ai = ai
+        # Create the Tk and canvas, set the background image
         self.__root = t.Tk()
         self.__root.resizable(width=False, height=False)
         self._canvas = t.Canvas(self.__root, width=self.CANVAS_WIDTH,
@@ -56,24 +61,23 @@ class GUI:
         self._canvas.create_image(0, 0, image=self.__bg, anchor="nw")
         self.__player = player
         self.__make_move = make_move
-        self.__get_player = get_player
         self.__get_current_player = get_current_player
 
-        # UI things
+        # Create UI buttons and labels
         self.__column_buttons = []
         self.__column_button_images = [t.PhotoImage(
             file="Images/button_images/button" + str(x) + ".png")
             for x in range(1, 8)]
         # TODO:: This is some ugly way of doing this
-        self.__labels_images = {}
-        self.__labels_images["Your Turn"] = t.PhotoImage(file=self.YOUR_TURN)
-        self.__labels_images["Enemy Turn"] = t.PhotoImage(file=self.ENEMY_TURN)
-        self.__labels_images["You Win"] = t.PhotoImage(file=self.WIN_LABEL)
-        self.__labels_images["You Lose"] = t.PhotoImage(file=self.LOSE_LABEL)
-        self.__labels_images["Draw"] = t.PhotoImage(file=self.DRAW_LABEL)
+        self.__labels_images = \
+            {"Your Turn": t.PhotoImage(file=self.YOUR_TURN),
+             "Enemy Turn": t.PhotoImage(file=self.ENEMY_TURN),
+             "You Win": t.PhotoImage(file=self.WIN_LABEL),
+             "You Lose": t.PhotoImage(file=self.LOSE_LABEL),
+             "Draw": t.PhotoImage(file=self.DRAW_LABEL)}
 
-        self.red_piece = t.PhotoImage(file=self.FIRST_PLAYER_CHIP)
-        self.blue_piece = t.PhotoImage(file=self.SECOND_PLAYER_CHIP)
+        self.white_piece = t.PhotoImage(file=self.OWN_PLAYER_CHIP)
+        self.black_piece = t.PhotoImage(file=self.OTHER_PLAYER_CHIP)
         self.red_piece_glowing = t.PhotoImage(file=self.FIRST_PLAYER_WIN_CHIP)
         self.blue_piece_glowing = t.PhotoImage(
             file=self.SECOND_PLAYER_WIN_CHIP)
@@ -124,7 +128,7 @@ class GUI:
             button.place(x=self.DELTA_WIDTH + self.CELL_PADDING +
                            (self.CELL_PADDING - 2) * i + self.DELTA_CELL * i,
                          y=10)
-            if self.__ai:
+            if self.__ai_flag:
                 button.config(state="disabled")
 
                 # self.__button = t.Button(self._parent, text="YO",
@@ -174,7 +178,7 @@ class GUI:
         self.disable_column_buttons()
         self._canvas.delete(self.__your_label)
         self._canvas.delete(self.__enemy_label)
-        if winning_player == self.__get_player():
+        if winning_player == self.__player:
             self._canvas.create_image(self.CANVAS_WIDTH / 2,
                                       self.CANVAS_HEIGHT / 2,
                                       image=self.__labels_images["You Win"],
@@ -184,7 +188,7 @@ class GUI:
                                       self.CANVAS_HEIGHT / 2,
                                       image=self.__labels_images["Draw"],
                                       anchor=self.CENTER_ANCHOR)
-        elif winning_player != self.__get_player():
+        elif winning_player != self.__player:
             self._canvas.create_image(self.CANVAS_WIDTH / 2,
                                       self.CANVAS_HEIGHT / 2,
                                       image=self.__labels_images["You Lose"],
@@ -198,7 +202,7 @@ class GUI:
                 button.config(state="disabled")
 
     def toggle_column_buttons(self, activate):
-        if not self.__ai:
+        if not self.__ai_flag:
             if not activate:
                 # Remove other label if it is still present
                 self._canvas.delete(self.__your_label)
@@ -254,9 +258,9 @@ class GUI:
                 chip = self.blue_piece_glowing
         else:
             if current_player == self.__player:
-                chip = self.red_piece
+                chip = self.white_piece
             else:
-                chip = self.blue_piece
+                chip = self.black_piece
 
         if not win:  # Create chip and animate it falling
             id = self._canvas.create_image(x, 10 + self.DELTA_CELL, image=chip,
@@ -313,7 +317,7 @@ class GUI:
             self.disable_column_buttons(False)
             # self.__button.config(state="disabled")
             return
-        elif self.__get_current_player == self.__get_player():
+        elif self.__get_current_player == self.__player:
             self.disable_column_buttons(True)
         self.lock = False
         # self.__button.config(state="active")
