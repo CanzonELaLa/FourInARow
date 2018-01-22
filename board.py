@@ -64,7 +64,7 @@ class Board:
             # column.reverse()
             self.__columns.append(column)
 
-    def check_add_chip(self, column, player):
+    def check_legal_move_get_row(self, column, player):
         """ :param column: Column to place chip in
             :param player: Owner of the chip
             :return: Success, row """

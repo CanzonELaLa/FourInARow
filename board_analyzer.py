@@ -12,15 +12,21 @@ class BoardAnalyzer:
     #                      "3033", "0333"]
 
     def __init__(self):
-        self.__player_one_states = {1: permutations(["0", "3", "3", "3"], 4),
-                                    2: permutations(["0", "0", "3", "3"], 4),
-                                    3: permutations(["0", "0", "0", "3"], 4),
-                                    1000: "0000"}
+        self.__player_one_states = {1: set(permutations(["0", "3", "3", "3"],
+                                                       4)),
+                                    2: set(permutations(["0", "0", "3", "3"],
+                                                       4)),
+                                    3: set(permutations(["0", "0", "0", "3"],
+                                                       4)),
+                                    1000: {("0","0","0","0")}}
 
-        self.__player_two_states = {1: permutations(["1", "3", "3", "3"], 4),
-                                    2: permutations(["1", "1", "3", "3"], 4),
-                                    3: permutations(["1", "1", "1", "3"], 4),
-                                    1000: "1111"}
+        self.__player_two_states = {1: set(permutations(["1", "3", "3", "3"],
+                                                       4)),
+                                    2: set(permutations(["1", "1", "3", "3"],
+                                                       4)),
+                                    3: set(permutations(["1", "1", "1", "3"],
+                                                       4)),
+                                    1000: {("1","1","1","1")}}
 
     def get_matrix_rows(self, matrix, reverse=False):
         """ :param matrix: Matrix from which to return the rows
@@ -156,12 +162,12 @@ class BoardAnalyzer:
             for i in range(len(string) - 3):
                 for score, sequences in self.__player_one_states.items():
                     for seq in sequences:
-                        if seq == string[i:i + 4]:
+                        if seq == tuple(string[i:i + 4]):
                             player_one_rank += score
 
                 for score, sequences in self.__player_two_states.items():
                     for seq in sequences:
-                        if seq == string[i:i + 4]:
+                        if seq == tuple(string[i:i + 4]):
                             player_two_rank += score
 
         if player == 0:

@@ -71,7 +71,7 @@ class Game:
 
         # If AI and server start the game
         if self.__ai_flag and self.__player == 0:
-            self.__ai.find_legal_move(game, self.__make_move)
+            self.__ai.find_legal_move(self, self.__make_move)
 
         # Start the gui and game
         self.__gui.get_root().mainloop()
@@ -84,8 +84,8 @@ class Game:
             return
 
         # attempts to place chip in column
-        success, row = self.__board.check_add_chip(column,
-                                                   self.PLAYER_ONE if not
+        success, row = self.__board.check_legal_move_get_row(column,
+                                                             self.PLAYER_ONE if not
                                                    self.__current_player else
                                                    self.PLAYER_TWO)
         if not success:
@@ -115,18 +115,20 @@ class Game:
         x, y = self.__board.get_chip_location(column, row)
         if winner is None:  # If game is still ongoing
             # Create the chip on board
-            self.__gui.create_chip_on_board(x, y, self.__current_player)
+            self.__gui.create_chip_on_board(x, y, self.__current_player,
+                                            board=self.__board)
 
             # Toggle player in class members
             self.__toggle_player()
 
             # Disable full columns
-            self.__disable_illegal_columns()
+            self.__gui.disable_illegal_columns(self.__board)
 
         else:  # Game ended
             self.__game_over = True
             if winner == self.DRAW:
-                self.__gui.create_chip_on_board(x, y, self.__current_player)
+                self.__gui.create_chip_on_board(x, y, self.__current_player,
+                                                board=self.__board)
                 self.__gui.disable_column_buttons()
                 self.__gui.show_game_over_label(self.DRAW)
             else:
@@ -135,18 +137,18 @@ class Game:
                                                 board=self.__board,
                                                 winner=winner)
 
-    def __disable_illegal_columns(self):
-        """ Check full columns and disable their buttons """
-        columns = self.__board.get_columns()
-        for i in range(len(columns)):
-            illegal_column = True
-            for cell in columns[i]:
-                if cell == self.EMPTY:
-                    # Will reach here if column is not full
-                    illegal_column = False
-                    break
-            if illegal_column:
-                self.__gui.disable_illegal_button(i)
+    # def __disable_illegal_columns(self):
+    #     """ Check full columns and disable their buttons """
+    #     columns = self.__board.get_columns()
+    #     for i in range(len(columns)):
+    #         illegal_column = True
+    #         for cell in columns[i]:
+    #             if cell == self.EMPTY:
+    #                 # Will reach here if column is not full
+    #                 illegal_column = False
+    #                 break
+    #         if illegal_column:
+    #             self.__gui.disable_illegal_button(i)
 
     def __toggle_player(self):
         """ Toggles members in the class, also make gui show switching of
@@ -207,7 +209,8 @@ class Game:
         expected_row = int(message[13])
 
         # Update board and check if same row was returned
-        success, row = self.__board.check_add_chip(column, self.PLAYER_ONE
+        success, row = self.__board.check_legal_move_get_row(column,
+                                                             self.PLAYER_ONE
             if not self.__current_player else self.PLAYER_TWO)
 
         # Assert it
@@ -223,12 +226,14 @@ class Game:
         else:
             raise Exception(self.ADD_CHIP_FAILED)
 
+        self.__gui.disable_illegal_columns(self.__board)
+
         # If the AI is playing, make another move
         if self.__ai_flag and not self.__game_over:
             self.__ai.find_legal_move(self, self.__make_move)
 
     def get_root(self):
-        """ Getter got root """
+        """ Getter for root """
         return self.__gui.get_root()
 
     def get_last_inserted_chip(self):

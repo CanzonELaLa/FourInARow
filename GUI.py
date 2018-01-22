@@ -68,7 +68,7 @@ class GUI:
         self.__column_button_images = [t.PhotoImage(
             file="Images/button_images/button" + str(x) + ".png")
             for x in range(1, 8)]
-        # TODO:: This is some ugly way of doing this
+        
         self.__labels_images = \
             {"Your Turn": t.PhotoImage(file=self.YOUR_TURN),
              "Enemy Turn": t.PhotoImage(file=self.ENEMY_TURN),
@@ -274,6 +274,10 @@ class GUI:
                 # Unlock buttons
                 self.lock_buttons_for_animation(False)
 
+                # Lock illegal buttons
+                if board  is not None:
+                    self.disable_illegal_columns(board)
+
                 # If this is a winning move, make proper chips glow and show
                 # label
                 if winning_chips is not None:
@@ -305,12 +309,25 @@ class GUI:
         """ :param flag: Lock or unlock """
         if flag:
             self.lock = True
-            self.disable_column_buttons(False)
+            self.disable_column_buttons()
             return
         elif self.__get_current_player() == self.__player and not \
                 self.__ai_flag:
-            self.disable_column_buttons(True)
+            self.disable_column_buttons(enable=True)
         self.lock = False
+
+    def disable_illegal_columns(self, board):
+        """ Check full columns and disable their buttons """
+        columns = board.get_columns()
+        for i in range(len(columns)):
+            illegal_column = True
+            for cell in columns[i]:
+                if cell == game.Game.EMPTY:
+                    # Will reach here if column is not full
+                    illegal_column = False
+                    break
+            if illegal_column:
+                self.disable_illegal_button(i)
 
     # TODO:: keeps disabling same buttons again and again because toggle
     # keeps enabling them
