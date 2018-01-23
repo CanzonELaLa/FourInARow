@@ -64,9 +64,10 @@ class Board:
             # column.reverse()
             self.__columns.append(column)
 
-    def check_legal_move_get_row(self, column, player):
+    def check_legal_move_get_row(self, column, player, set_chip_flag=True):
         """ :param column: Column to place chip in
             :param player: Owner of the chip
+            :param set_chip_flag: if True, sets cell on successful check
             :return: Success, row """
         # TODO:: User assert on the output of this function
         # why would this ever happen?
@@ -85,8 +86,10 @@ class Board:
         if designated_row == -1:
             return False, -1
 
-        # Update board columns
-        self.__set_cell(player, column, designated_row)
+        if set_chip_flag:
+
+            # Update board columns
+            self.__set_cell(player, column, designated_row)
 
         return True, designated_row
 

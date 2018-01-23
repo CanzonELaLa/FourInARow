@@ -14,6 +14,7 @@ class GUI:
     ACCEL_NORMALIZATION = 0.025
     ACCELERATION = 9
     STARTING_SPEED = 0
+    BLINK_TIMER = 500
 
     # Positioning constants
     DELTA_HEIGHT = 130
@@ -34,8 +35,8 @@ class GUI:
     OTHER_PLAYER_CHIP = "Images/black_chip.png"
     OWN_PLAYER_WIN_CHIP = "Images/white_chip_glow.png"
     OTHER_PLAYER_WIN_CHIP = "Images/black_chip_glow.png"
-    YOUR_TURN = "Images/Your turn.gif"
-    ENEMY_TURN = "Images/Enemy turn.gif"
+    YOUR_TURN = "Images/Your turn.png"
+    ENEMY_TURN = "Images/Enemy turn.png"
     BG_IMAGE = "Images/bg2.png"
     WIN_LABEL = "Images/You win.png"
     LOSE_LABEL = "Images/You lose.png"
@@ -68,7 +69,7 @@ class GUI:
         self.__column_button_images = [t.PhotoImage(
             file="Images/button_images/button" + str(x) + ".png")
             for x in range(1, 8)]
-        
+
         self.__labels_images = \
             {"Your Turn": t.PhotoImage(file=self.YOUR_TURN),
              "Enemy Turn": t.PhotoImage(file=self.ENEMY_TURN),
@@ -133,61 +134,59 @@ class GUI:
         elif winning_player != self.__player:
             image = self.__labels_images["You Lose"]
 
-        self._canvas.create_image(self.CANVAS_WIDTH / 2,
-                                  self.CANVAS_HEIGHT / 2,
-                                  anchor=self.CENTER_ANCHOR,
+        self._canvas.create_image(self.CANVAS_WIDTH / 2, -20, anchor="n",
                                   image=image)
 
     def disable_column_buttons(self, enable=False):
         """ :param enable: Enable/Disable the buttons """
         for button in self.__column_buttons:
-            if enable:
-                button.config(state="active")
-            else:
-                button.config(state="disabled")
+            if button is not None:  # Check if button is still there
+                if enable:
+                    button.config(state="active")
+                else:
+                    button.config(state="disabled")
 
     def end_turn_switch_player(self, own_turn):
         """ :param own_turn: Whether or not this is the player's turn """
-        # So long as the AI isn't playing
-        if not self.__ai_flag:  # If own turn ended
-            if not own_turn:
-                # Remove other label if it is still present
-                self._canvas.delete(self.__your_label)
+        if not own_turn:  # If own turn ended
+            # Remove other label if it is still present
+            self._canvas.delete(self.__your_label)
 
-                # Toggle the buttons
-                self.disable_column_buttons()
+            # Toggle the buttons
+            self.disable_column_buttons()
 
-                # Create label
-                self.__enemy_label = \
-                    self._canvas.create_image(self.CANVAS_WIDTH / 2,
-                                              self.CANVAS_HEIGHT / 2,
-                                              image=self.__labels_images[
-                                                  "Enemy Turn"],
-                                              anchor=self.CENTER_ANCHOR)
+            # Create label
+            self.__enemy_label = \
+                self._canvas.create_image(self.CANVAS_WIDTH / 2,
+                                          self.CANVAS_HEIGHT / 2,
+                                          image=self.__labels_images[
+                                              "Enemy Turn"],
+                                          anchor=self.CENTER_ANCHOR)
 
-                # Set destroy time for label
-                self.__root.after(self.LABEL_LIFE_TIME_MS,
-                                  lambda: self._canvas.delete(
-                                      self.__enemy_label))
-            else:  # If own turn starts
-                # Remove other label if it is still present
-                self._canvas.delete(self.__enemy_label)
+            # Set destroy time for label
+            self.__root.after(self.LABEL_LIFE_TIME_MS,
+                              lambda: self._canvas.delete(
+                                  self.__enemy_label))
+        else:  # If own turn starts
+            # Remove other label if it is still present
+            self._canvas.delete(self.__enemy_label)
 
-                # Toggle the buttons
+            # Toggle the buttons
+            if not self.__ai_flag:  # Don't enable if AI is playing
                 self.disable_column_buttons(True)
 
-                # Create label
-                self.__your_label = \
-                    self._canvas.create_image(self.CANVAS_WIDTH / 2,
-                                              self.CANVAS_HEIGHT / 2,
-                                              image=self.__labels_images[
-                                                  "Your Turn"],
-                                              anchor=self.CENTER_ANCHOR)
+            # Create label
+            self.__your_label = \
+                self._canvas.create_image(self.CANVAS_WIDTH / 2,
+                                          self.CANVAS_HEIGHT / 2,
+                                          image=self.__labels_images[
+                                              "Your Turn"],
+                                          anchor=self.CENTER_ANCHOR)
 
-                # Set destroy time for label
-                self.__root.after(self.LABEL_LIFE_TIME_MS,
-                                  lambda: self._canvas.delete(
-                                      self.__your_label))
+            # Set destroy time for label
+            self.__root.after(self.LABEL_LIFE_TIME_MS,
+                              lambda: self._canvas.delete(
+                                  self.__your_label))
 
     # TODO:: Fallback ai in case of w.c.s.
     def __make_random_move(self):
@@ -243,8 +242,8 @@ class GUI:
                                       winning_chips, board, winner)(0)
 
         else:  # Set chips to glowing ones, no animation
-            self._canvas.create_image(x, y, image=chip,
-                                      anchor=self.NW_ANCHOR)
+            return self._canvas.create_image(x, y, image=chip,
+                                             anchor=self.NW_ANCHOR)
 
     def __get_animation_func(self, obj_id, final_y, vel, winning_chips,
                              board, winner):
@@ -256,6 +255,7 @@ class GUI:
             :param board: Board for references later on
             :param winner: Winner to pass on
             :return: Animation function """
+
         def animate_fall(time_elapsed):
             """ Recursive function for animation
                 :param time_elapsed: Time since start animation """
@@ -267,7 +267,7 @@ class GUI:
 
             # Get current position of obj
             x0, y0 = self._canvas.coords(obj_id)
-            if y0 >= final_y:  # If final flace reached
+            if y0 >= final_y:  # If final place has been reached
                 # Set the final location
                 self._canvas.coords(obj_id, x0, final_y)
 
@@ -275,7 +275,7 @@ class GUI:
                 self.lock_buttons_for_animation(False)
 
                 # Lock illegal buttons
-                if board  is not None:
+                if board is not None:
                     self.disable_illegal_columns(board)
 
                 # If this is a winning move, make proper chips glow and show
@@ -291,15 +291,17 @@ class GUI:
         def on_win_condition(winning_chips, winner):
             """ :param winning_chips: Winning chips to make glow
                 :param winner: Who won the game """
+            # Show winner label
+            self.show_game_over_label(winner)
+
             # Color all relevant chips
             self.color_winning_chips(winner,
                                      winning_chips, board)
 
-            # Disable all buttons
-            self.disable_column_buttons()
-
-            # Show winner label
-            self.show_game_over_label(winner)
+            # Destroy all remaining buttons
+            for button in self.__column_buttons:
+                if button is not None:
+                    button.destroy()
 
         # Lock buttons for animation
         self.lock_buttons_for_animation(True)
@@ -333,13 +335,46 @@ class GUI:
     # keeps enabling them
     def disable_illegal_button(self, col):
         """ :param col: Button column to disable """
-        self.__column_buttons[col].config(state="disabled")
+        button = self.__column_buttons[col]
+        # Destroy the button as it is not needed anymore
+        if button is not None:
+            button.destroy()
+            # Since we are iterating over this list, I must keep it at the
+            # same length, thus inserting None instead of destroyed button
+            self.__column_buttons[col] = None
 
     def color_winning_chips(self, player, chips, board):
         """ :param player: Winning player
             :param chips: List of chips to make glow
             :param board: Board reference """
+        chip_widgets = []
         for x, y in chips:
             cell = board.get_cell_at(x, y)
-            self.create_chip_on_board(cell.get_location()[0],
-                                      cell.get_location()[1], player, True)
+            chip_widgets.append(
+                self.create_chip_on_board(cell.get_location()[0],
+                                          cell.get_location()[1], player,
+                                          True))
+
+        def get_animate(chip):
+            """ Gets blinking animation for chips
+                :param chip: List of chip ids
+                :return: func of blinking """
+
+            def animate_up():
+                """ Raises chip to top """
+                self._canvas.lift(chip)
+                self._canvas.after(200, animate_down)
+
+            def animate_down():
+                """ Lowers chip to bottom """
+                self._canvas.lower(chip)
+                self._canvas.after(self.BLINK_TIMER, animate_up)
+
+            return animate_down
+
+        def blink(chips_widgets):
+            """ Start blinking animation """
+            for chip in chips_widgets:
+                self._canvas.after(self.BLINK_TIMER, get_animate(chip))
+
+        blink(chip_widgets)

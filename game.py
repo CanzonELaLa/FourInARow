@@ -38,9 +38,13 @@ class Game:
             self.__enemy_player = self.PLAYER_ONE
             self.__current_player = self.__enemy_player
 
+        # Create board
+        self.__board = Board(self.get_current_player)
+        self.__game_over = False
+
         self.__ai_flag = False
         if argv[1] == "ai":
-            self.__ai = AI()
+            self.__ai = AI(self.__board)
             self.__ai_flag = True
 
         # Create gui
@@ -50,10 +54,6 @@ class Game:
         # If this is the client, disable buttons until player turn
         if self.__player == self.PLAYER_TWO:
             self.__gui.disable_column_buttons()
-
-        # Create board
-        self.__board = Board(self.get_current_player)
-        self.__game_over = False
 
         # TODO:: Ugly code, find a workaround
         self.__last_inserted_chip = None
