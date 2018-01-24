@@ -9,7 +9,9 @@ class Cell:
     Cell class
     """
     def __init__(self, location, player=None):
-        """ Initializes the cell class """
+        """ Initializes the cell class
+            :param location: Tuple of pixel position
+            :param player: Pre_load cell with this player """
         self.__chip_owner = game.Game.EMPTY if player is None else player
         self.__location = location
 
@@ -20,10 +22,6 @@ class Cell:
     def set_chip_owner(self, player):
         """ Setter for chip owner """
         self.__chip_owner = player
-
-    def get_chip_owner(self):
-        """ Getter for chip owner """
-        return self.__chip_owner
 
     def __str__(self):
         return str(self.__chip_owner)
@@ -48,20 +46,23 @@ class Board:
     WINNING_SEQ_LENGTH = 4
 
     def __init__(self, get_current_player):
-        """ Initializes the class """
+        """ Initializes the class
+            :param get_current_player: Func from game, gets current playing
+                                       player """
         self.__columns = []
         self.__get_current_player = get_current_player
 
         for i in range(Board.BOARD_WIDTH):
             column = []
             for j in range(Board.BOARD_HEIGHT):
+                # Calculations based on board image size
                 column.append(Cell((self.DELTA_WIDTH + self.CELL_PADDING +
                                     (self.CELL_PADDING - 2) * i +
                                     self.DELTA_CELL * i,
                                     self.DELTA_HEIGHT + self.CELL_PADDING +
                                     (self.CELL_PADDING - 2) * j +
                                     self.DELTA_CELL * j)))
-            # column.reverse()
+
             self.__columns.append(column)
 
     def check_legal_move_get_row(self, column, player, set_chip_flag=True):
@@ -70,9 +71,6 @@ class Board:
             :param set_chip_flag: if True, sets cell on successful check
             :return: Success, row """
         # TODO:: User assert on the output of this function
-        # why would this ever happen?
-        if self.__columns is None:
-            return False, -1
 
         # Cells already occupied
         taken_cells = [cell
@@ -114,7 +112,7 @@ class Board:
         return columns
 
     def get_columns_as_str(self):
-        """ Gets columns list as strings instead of cells """
+        """ Gets columns list as strings instead of cells, used by AI """
         columns = [[str(self.__columns[col][cell])
                     for cell in range(len(self.__columns[col]))]
                    for col in range(len(self.__columns))]
@@ -130,7 +128,7 @@ class Board:
     def find_connected_and_winner(self, column, row):
         """ :param column: Column of last placed chip
             :param row: Row of last placed chip
-            :return: Winning player, List of winning chips
+            :return: Winning __player, List of winning chips
         """
         columns = self.__columns  # For readability
 
@@ -138,7 +136,7 @@ class Board:
         lst = []
         for j in range(row, min(row + self.WINNING_SEQ_LENGTH,
                                 len(columns[column]))):
-            if int(columns[column][j])== self.__get_current_player():
+            if int(columns[column][j]) == self.__get_current_player():
                 lst.append((column, j))
 
         if len(lst) == self.WINNING_SEQ_LENGTH:
@@ -199,7 +197,7 @@ class Board:
         draw_flag = True
         for col in range(len(self.__columns)):
             for row in range(len(self.__columns[col])):
-                if int(self.__columns[col][row]) == 3:
+                if int(self.__columns[col][row]) == game.Game.EMPTY:
                     draw_flag = False
 
         return draw_flag

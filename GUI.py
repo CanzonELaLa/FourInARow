@@ -14,7 +14,8 @@ class GUI:
     ACCEL_NORMALIZATION = 0.025
     ACCELERATION = 9
     STARTING_SPEED = 0
-    BLINK_TIMER = 500
+    BLINK_TIMER_UP = 500
+    BLINK_TIMER_DOWN = 200
 
     # Positioning constants
     DELTA_HEIGHT = 130
@@ -23,6 +24,7 @@ class GUI:
     CELL_PADDING = 13
     CENTER_ANCHOR = "center"
     NW_ANCHOR = "nw"
+    NORTH_ANCHOR = "n"
 
     # Main gui constants
     COLUMN_BUTTON_SIZE = 92
@@ -42,13 +44,17 @@ class GUI:
     LOSE_LABEL = "Images/You lose.png"
     DRAW_LABEL = "Images/Draw.png"
 
+    BOARD_WIDTH = 7
+    BUTTON_DISTANCE_FROM_TOP = 10
+    LABELS_DISTANCE_FROM_TOP = -20
+
     def __init__(self, player, make_move, get_current_player, ai):
         """ Initialized the GUI
             :param player: 0 or 1 depending on client/server
             :param make_move: func that makes a move on the board
-            :param get_current_player: Func that gets the current player of
+            :param get_current_player: Func that gets the current __player of
                                        the Game.
-            :param ai: Whether or not the player is ai
+            :param ai: Whether or not the __player is ai
         """
         self.__ai_flag = ai
 
@@ -68,7 +74,7 @@ class GUI:
         self.__column_buttons = []
         self.__column_button_images = [t.PhotoImage(
             file="Images/button_images/button" + str(x) + ".png")
-            for x in range(1, 8)]
+            for x in range(1, self.BOARD_WIDTH + 1)]
 
         self.__labels_images = \
             {"Your Turn": t.PhotoImage(file=self.YOUR_TURN),
@@ -111,7 +117,7 @@ class GUI:
                           command=create_add_chip_func(i))
             button.place(x=self.DELTA_WIDTH + self.CELL_PADDING +
                            (self.CELL_PADDING - 2) * i + self.DELTA_CELL * i,
-                         y=10)
+                         y=self.BUTTON_DISTANCE_FROM_TOP)
             self.__column_buttons.append(button)
             if self.__ai_flag:  # If the AI is playing, disable the buttons
                 button.config(state="disabled")
@@ -134,7 +140,9 @@ class GUI:
         elif winning_player != self.__player:
             image = self.__labels_images["You Lose"]
 
-        self._canvas.create_image(self.CANVAS_WIDTH / 2, -20, anchor="n",
+        self._canvas.create_image(self.CANVAS_WIDTH / 2,
+                                  self.LABELS_DISTANCE_FROM_TOP,
+                                  anchor=self.NORTH_ANCHOR,
                                   image=image)
 
     def disable_column_buttons(self, enable=False):
@@ -147,8 +155,8 @@ class GUI:
                     button.config(state="disabled")
 
     def end_turn_switch_player(self, own_turn):
-        """ :param own_turn: Whether or not this is the player's turn """
-        if not own_turn:  # If own turn ended
+        """ :param own_turn: Whether or not this is the __player's __turn """
+        if not own_turn:  # If own __turn ended
             # Remove other label if it is still present
             self._canvas.delete(self.__your_label)
 
@@ -187,18 +195,6 @@ class GUI:
             self.__root.after(self.LABEL_LIFE_TIME_MS,
                               lambda: self._canvas.delete(
                                   self.__your_label))
-
-    # TODO:: Fallback ai in case of w.c.s.
-    def __make_random_move(self):
-        col = randint(0, 6)
-        # while not self.__game.get_board().add_chip(col, game.Game.PLAYER_ONE,
-        #                                            self.__game):
-        while col >= 0:
-            try:
-                self.__make_move(col)
-                col = -1
-            except:
-                col = randint(0, 6)
 
     def get_root(self):
         """ Getter for root """
@@ -344,7 +340,7 @@ class GUI:
             self.__column_buttons[col] = None
 
     def color_winning_chips(self, player, chips, board):
-        """ :param player: Winning player
+        """ :param player: Winning __player
             :param chips: List of chips to make glow
             :param board: Board reference """
         chip_widgets = []
@@ -363,18 +359,18 @@ class GUI:
             def animate_up():
                 """ Raises chip to top """
                 self._canvas.lift(chip)
-                self._canvas.after(200, animate_down)
+                self._canvas.after(self.BLINK_TIMER_DOWN, animate_down)
 
             def animate_down():
                 """ Lowers chip to bottom """
                 self._canvas.lower(chip)
-                self._canvas.after(self.BLINK_TIMER, animate_up)
+                self._canvas.after(self.BLINK_TIMER_UP, animate_up)
 
             return animate_down
 
         def blink(chips_widgets):
             """ Start blinking animation """
             for chip in chips_widgets:
-                self._canvas.after(self.BLINK_TIMER, get_animate(chip))
+                self._canvas.after(self.BLINK_TIMER_UP, get_animate(chip))
 
         blink(chip_widgets)

@@ -5,35 +5,74 @@ class BoardAnalyzer:
     """ Analyzes the board """
     # Re-purposed code from ex5
 
-    EMPTY_STRING = ""
+    CONCAT_STR = ""
+    SCORE_LEN_ONE = 2
+    SCORE_LEN_TWO = SCORE_LEN_ONE ** 2
+    SCORE_LEN_THREE = SCORE_LEN_TWO ** 2
+    SCORE_LEN_FOUR = 1000
+
+    LEN_ONE_SEQ_PLAYER_ONE = ["0", "3", "3", "3"]
+    LEN_TWO_SEQ_PLAYER_ONE = ["0", "0", "3", "3"]
+    LEN_THREE_SEQ_PLAYER_ONE = ["0", "0", "0", "3"]
+    LEN_FOUR_SEQ_PLAYER_ONE = ("0", "0", "0", "0")
+
+    LEN_ONE_SEQ_PLAYER_TWO = ["1", "3", "3", "3"]
+    LEN_TWO_SEQ_PLAYER_TWO = ["1", "1", "3", "3"]
+    LEN_THREE_SEQ_PLAYER_TWO = ["1", "1", "1", "3"]
+    LEN_FOUR_SEQ_PLAYER_TWO = ("1", "1", "1", "1")
+
+    LEN_TWO_BLOCK_PLAYER_ONE = ["0", "0", "3"]
+    LEN_TWO_BLOCK_PLAYER_TWO = ["1", "1", "3"]
 
     def __init__(self):
         # Creating scoring dicts, keys being (score for row placement,
         # col placement, diag placement)
-        self.__player_one_states = {(2, 1, 1):
-                                        set(permutations(["0", "3", "3", "3"],
-                                                         4)),
-                                    (4, 3, 4):
-                                        set(permutations(["0", "0", "3", "3"],
-                                                         4)),
-                                    (16, 15, 8):
-                                        set(permutations(["0", "0", "0", "3"],
-                                                         4)),
-                                    (1000, 1000, 1000): {("0", "0", "0", "0")}}
+        # Rows get max score, columns get row - 1 and diags get row // 2
+        self.__player_one_states = {(self.SCORE_LEN_ONE, self.SCORE_LEN_ONE
+                                     - 1, self.SCORE_LEN_ONE // 2):
+                                        set(permutations(
+                                            self.LEN_ONE_SEQ_PLAYER_ONE, 4)),
+                                    (self.SCORE_LEN_TWO, self.SCORE_LEN_TWO
+                                     - 1, self.SCORE_LEN_TWO // 2):
+                                        set(permutations(
+                                            self.LEN_TWO_SEQ_PLAYER_ONE, 4)),
+                                    (self.SCORE_LEN_THREE, self.SCORE_LEN_THREE
+                                     - 1, self.SCORE_LEN_THREE // 2):
+                                        set(permutations(
+                                            self.LEN_THREE_SEQ_PLAYER_ONE, 4)),
+                                    (self.SCORE_LEN_FOUR,
+                                     self.SCORE_LEN_FOUR,
+                                     self.SCORE_LEN_FOUR):
+                                        {self.LEN_FOUR_SEQ_PLAYER_ONE}}
 
-        self.__player_two_states = {(2, 1, 1):
-                                        set(permutations(["1", "3", "3", "3"],
-                                                         4)),
-                                    (4, 3, 4):
-                                        set(permutations(["1", "1", "3", "3"],
-                                                         4)),
-                                    (16, 15, 8):
-                                        set(permutations(["1", "1", "1", "3"],
-                                                         4)),
-                                    (1000, 1000, 1000): {("1", "1", "1", "1")}}
+        self.__player_two_states = {(self.SCORE_LEN_ONE, self.SCORE_LEN_ONE
+                                     - 1, self.SCORE_LEN_ONE // 2):
+                                        set(permutations(
+                                            self.LEN_ONE_SEQ_PLAYER_TWO, 4)),
+                                    (self.SCORE_LEN_TWO, self.SCORE_LEN_TWO
+                                     - 1, self.SCORE_LEN_TWO // 2):
+                                        set(permutations(
+                                            self.LEN_TWO_SEQ_PLAYER_TWO, 4)),
+                                    (self.SCORE_LEN_THREE, self.SCORE_LEN_THREE
+                                     - 1, self.SCORE_LEN_THREE // 2):
+                                        set(permutations(
+                                            self.LEN_THREE_SEQ_PLAYER_TWO, 4)),
+                                    (self.SCORE_LEN_FOUR,
+                                     self.SCORE_LEN_FOUR,
+                                     self.SCORE_LEN_FOUR):
+                                        {self.LEN_FOUR_SEQ_PLAYER_TWO}}
 
-        self.__player_one_block_states = self.__player_one_states[(16, 15, 8)]
-        self.__player_two_block_states = self.__player_two_states[(16, 15, 8)]
+
+        self.__player_one_block_states = self.__player_one_states[
+            (self.SCORE_LEN_THREE, self.SCORE_LEN_THREE - 1,
+             self.SCORE_LEN_THREE // 2)]
+        self.__player_two_block_states = self.__player_two_states[
+            (self.SCORE_LEN_THREE, self.SCORE_LEN_THREE - 1,
+             self.SCORE_LEN_THREE // 2)]
+        self.__player_one_block_two_states = set(permutations(
+            self.LEN_TWO_BLOCK_PLAYER_ONE, 3))
+        self.__player_two_block_two_states = set(permutations(
+            self.LEN_TWO_BLOCK_PLAYER_TWO, 3))
 
     def get_matrix_cols(self, matrix, reverse=False):
         """ :param matrix: Matrix from which to return the rows
@@ -42,7 +81,7 @@ class BoardAnalyzer:
         """
 
         # Create the list using comprehension
-        return [self.EMPTY_STRING.join(row if not reverse else row[::-1])
+        return [self.CONCAT_STR.join(row if not reverse else row[::-1])
                 for row in matrix]
 
     @staticmethod
@@ -97,11 +136,11 @@ class BoardAnalyzer:
                 diagonal = diagonal[::-1]
 
             if return_as_dict:
-                diags_dict[first_loc] = self.EMPTY_STRING.join(diagonal)
+                diags_dict[first_loc] = self.CONCAT_STR.join(diagonal)
             else:
 
                 # append the list as a string to diags
-                diags.append(self.EMPTY_STRING.join(diagonal))
+                diags.append(self.CONCAT_STR.join(diagonal))
 
         if return_as_dict:
             return diags_dict
@@ -152,11 +191,11 @@ class BoardAnalyzer:
 
             if return_as_dict:
                 antidiags_dict[first_loc] \
-                    = self.EMPTY_STRING.join(antidiagonal)
+                    = self.CONCAT_STR.join(antidiagonal)
             else:
 
                 # append the list as a string to antidiags
-                antidiags.append(self.EMPTY_STRING.join(antidiagonal))
+                antidiags.append(self.CONCAT_STR.join(antidiagonal))
 
         if return_as_dict:
             return antidiags_dict
@@ -187,60 +226,41 @@ class BoardAnalyzer:
             return rows_dict, cols_dict, antidiags, diags
         return rows + cols + antidiags + diags
 
-    # def get_winner(self, directional_strings, word_list):
-    #     for string in directional_strings:
-    #         for i in range(len(string)):
-    #             for word in word_list:
-    #                 if word == string[i:i + len(word)]:
-    #                     return word[0]
-    #     return None
-    #
-    # def get_winner_from_columns(self, columns):
-    #     winner = self.get_winner(self.get_directional_strings(columns),
-    #                              self.WIN_STATES)
-    #     return int(winner) if winner is not None else None
-    #
-    #     # def get_states(self, columns, ):
-
     def rank_board(self, player, str_columns):
+        """ :param player: Int representing the player
+            :param str_columns: Board state as list of lists of strings
+            :return: Score of board for said player
+        """
+        # Get relevent data from board state
         rows, cols, antidiags, diags = \
             self.get_directional_strings(str_columns, True)
 
         player_one_rank = 0
         player_two_rank = 0
 
-        rows_one, rows_two = self.rank_rows_cols(rows)
-        cols_one, cols_two = self.rank_rows_cols(cols, True)
-        diags_one, diags_two = self.rank_diags({**diags, **antidiags})
+        # Rank seperatly
+        rows_one, rows_two = self.rank_rows_cols_diags(rows)
+        cols_one, cols_two = self.rank_rows_cols_diags(cols, cols=True)
+        diags_one, diags_two = self.rank_rows_cols_diags(diags, diags=True)
+        antidiags_one, antidiags_two = self.rank_rows_cols_diags(antidiags,
+                                                                 diags=True)
 
-        player_one_rank += rows_one + diags_one + cols_one
-        player_two_rank += rows_two + diags_two + cols_two
+        # Add up the ranks
+        player_one_rank += rows_one + cols_one + diags_one + antidiags_one
+        player_two_rank += rows_two + cols_two + diags_two + antidiags_two
 
+        # Return correct rank
         if player == 0:
             return player_one_rank - player_two_rank
         else:
             return player_two_rank - player_one_rank
 
-    def rank_diags(self, lst):
-        player_one_rank = 0
-        player_two_rank = 0
-        for string in lst:
-            for i in range(len(string) - 3):
-                for score, sequences in \
-                        self.__player_one_states.items():
-                    for seq in sequences:
-                        if seq == tuple(string[i:i + 4]):
-                            player_one_rank += score[2]
-
-                for score, sequences in \
-                        self.__player_two_states.items():
-                    for seq in sequences:
-                        if seq == tuple(string[i:i + 4]):
-                            player_two_rank += score[2]
-
-        return player_one_rank, player_two_rank
-
-    def rank_rows_cols(self, dct, cols=False):
+    def rank_rows_cols_diags(self, dct, cols=False, diags=False):
+        """ :param dct: Position: string , of every row/col/diag/antidiag
+            :param cols: If dct represents cols
+            :param diags: If dct represents diags/antigiads
+            :return: Rank of cols/diags/antidiags/rows
+        """
         player_one_rank = 0
         player_two_rank = 0
         for string in dct.values():
@@ -249,42 +269,27 @@ class BoardAnalyzer:
                         self.__player_one_states.items():
                     for seq in sequences:
                         if seq == tuple(string[i:i + 4]):
-                            player_one_rank += score[1 if cols else 0]
+                            if diags: index = 2
+                            elif cols: index = 1
+                            else: index = 0
+                            player_one_rank += score[index]
 
                 for score, sequences in \
                         self.__player_two_states.items():
                     for seq in sequences:
                         if seq == tuple(string[i:i + 4]):
-                            player_two_rank += score[1 if cols else 0]
+                            if diags: index = 2
+                            elif cols: index = 1
+                            else: index = 0
+                            player_two_rank += score[index]
         return player_one_rank, player_two_rank
-
-    def get_block_locs(self, player, str_columns):
-        directional_dicts = self.get_directional_strings(str_columns, True)
-        block_states = self.__player_one_block_states if player \
-            else self.__player_two_block_states
-
-        block_locs_to_check = []
-
-        for dict_index in range(len(directional_dicts)):
-            for starting_loc, string in directional_dicts[dict_index].items():
-                for i in range(len(string) - 3):
-                    for block_state in block_states:
-                        if block_state == tuple(string[i:i + 4]):
-                            block_loc = block_state.index("3")
-                            col = starting_loc[1] + (
-                                i + block_loc if dict_index != 1 else 0)
-                            expected_row = starting_loc[0] + \
-                                           (i + block_loc
-                                            if dict_index in [1, 3]
-                                            else -i - block_loc if
-                                           dict_index == 2 else 0)
-                            block_locs_to_check.append((expected_row, col))
-        return block_locs_to_check
 
     def get_block_and_win_locs(self, player, str_columns):
         directional_dicts = self.get_directional_strings(str_columns, True)
         block_states = self.__player_one_block_states if player \
             else self.__player_two_block_states
+        block_two_states = self.__player_one_block_two_states if player \
+            else self.__player_two_block_two_states
         win_states = self.__player_two_block_states if player \
             else self.__player_one_block_states
 
@@ -315,8 +320,24 @@ class BoardAnalyzer:
                             expected_row = starting_loc[0] + \
                                            (i + block_loc
                                             if dict_index in [1, 3]
-                                            else -i - block_loc
-                                           if dict_index == 2
-                                           else 0)
+                                            else -(i + block_loc)
+                                            if dict_index == 2
+                                            else 0)
                             block_locs_to_check.append((expected_row, col))
+
+                for j in range(len(string) - 2):
+
+                    for block_two_state in block_two_states:
+                        if block_two_state == tuple(string[j:j + 3]):
+                            block_two_loc = block_two_state.index("3")
+                            col = starting_loc[1] + (
+                                j + block_two_loc if dict_index != 1 else 0)
+                            expected_row = starting_loc[0] + \
+                                           (j + block_two_loc
+                                            if dict_index in [1, 3]
+                                            else -(j + block_two_loc)
+                                            if dict_index == 2
+                                            else 0)
+                            block_locs_to_check.append((expected_row, col))
+
         return win_locs_to_check, block_locs_to_check

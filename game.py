@@ -7,7 +7,7 @@ from ai import AI
 
 class Game:
     """
-        Game class, handles gamplay, gui and communicator
+        Game class, handles gameplay, gui and communicator
     """
     PLAYER_ONE = 0
     PLAYER_TWO = 1
@@ -26,6 +26,9 @@ class Game:
     COMMUNICATOR_MESSAGE_1 = "CHIP_DATA: "
     COMMUNICATOR_MESSAGE_2 = "CHECK_WINNER: "
 
+    EXPECTED_AMOUNT_OF_ARGUMENTS_FOR_CLIENT = 4
+    EXPECTED_LENGTH_OF_MESSAGE = 30
+
     def __init__(self):
         """ Initializes the game class """
         # If server mode is on (no IP address provided)
@@ -42,9 +45,10 @@ class Game:
         self.__board = Board(self.get_current_player)
         self.__game_over = False
 
+        # initializes AI if AI was chosen at run
         self.__ai_flag = False
         if argv[1] == "ai":
-            self.__ai = AI(self.__board)
+            self.__ai = AI()
             self.__ai_flag = True
 
         # Create gui
@@ -62,15 +66,17 @@ class Game:
         port = int(argv[2])
         ip = None
 
-        if len(argv) == 4:
+        if len(argv) == self.EXPECTED_AMOUNT_OF_ARGUMENTS_FOR_CLIENT:
             ip = argv[3]
 
+        # Initializes communicator
         self.__communicator = Communicator(self.__gui.get_root(), port, ip)
         self.__communicator.connect()
-        self.__communicator.bind_action_to_message(self.parse_message_from_enemy)
+        self.__communicator.bind_action_to_message(
+            self.parse_rival_message)
 
-        # If AI and server start the game
-        if self.__ai_flag and self.__player == 0:
+        # If AI on server start the game, make a move
+        if self.__ai_flag and self.__player == self.PLAYER_ONE:
             self.__ai.find_legal_move(self, self.__make_move)
 
         # Start the gui and game
@@ -84,10 +90,9 @@ class Game:
             return
 
         # attempts to place chip in column
-        success, row = self.__board.check_legal_move_get_row(column,
-                                                             self.PLAYER_ONE if not
-                                                   self.__current_player else
-                                                   self.PLAYER_TWO)
+        success, row = self.__board.check_legal_move_get_row(
+            column, self.PLAYER_ONE if not self.__current_player
+            else self.PLAYER_TWO)
         if not success:
             raise Exception(self.ILLEGAL_MOVE)
 
@@ -106,7 +111,6 @@ class Game:
     def __check_winner(self, column, row):
         """ :param column: Column of newest chip
             :param row: Row of newest chip """
-
         # Get data if a winning state was reached
         winner, winning_chips = self.__board.find_connected_and_winner(column,
                                                                        row)
@@ -118,7 +122,7 @@ class Game:
             self.__gui.create_chip_on_board(x, y, self.__current_player,
                                             board=self.__board)
 
-            # Toggle player in class members
+            # Toggle __player in class members
             self.__toggle_player()
 
             # Disable full columns
@@ -136,19 +140,6 @@ class Game:
                                                 winning_chips=winning_chips,
                                                 board=self.__board,
                                                 winner=winner)
-
-    # def __disable_illegal_columns(self):
-    #     """ Check full columns and disable their buttons """
-    #     columns = self.__board.get_columns()
-    #     for i in range(len(columns)):
-    #         illegal_column = True
-    #         for cell in columns[i]:
-    #             if cell == self.EMPTY:
-    #                 # Will reach here if column is not full
-    #                 illegal_column = False
-    #                 break
-    #         if illegal_column:
-    #             self.__gui.disable_illegal_button(i)
 
     def __toggle_player(self):
         """ Toggles members in the class, also make gui show switching of
@@ -176,32 +167,17 @@ class Game:
         return None if player == self.EMPTY else player
 
     def get_current_player(self):
-        """ Getter for current player """
+        """ Getter for current __player """
         return self.__current_player
 
     def get_board(self):
         """ Getter for board """
         return self.__board
 
-    def set_current_player(self, player):
-        """ Setter for current player """
-        self.__current_player = player
-
-    def set_player(self, player):
-        """ Setter for player """
-        self.__player = player
-
-    def get_player(self):
-        """ Getter for player """
-        return self.__player
-
-    def set_gui(self, gui):
-        """ Setter for gui """
-        self.__gui = gui
-
-    def parse_message_from_enemy(self, message):
+    def parse_rival_message(self, message):
         """ :param message: Message received from enemy """
-        if len(message) != 30:  # Check message of corect length
+        # Check message of corect length
+        if len(message) != self.EXPECTED_LENGTH_OF_MESSAGE:
             raise Exception(self.INVALID_MESSAGE)
 
         # Parse data from message
@@ -209,9 +185,9 @@ class Game:
         expected_row = int(message[13])
 
         # Update board and check if same row was returned
-        success, row = self.__board.check_legal_move_get_row(column,
-                                                             self.PLAYER_ONE
-            if not self.__current_player else self.PLAYER_TWO)
+        success, row = self.__board.check_legal_move_get_row(
+            column, self.PLAYER_ONE if not self.__current_player
+            else self.PLAYER_TWO)
 
         # Assert it
         assert row == expected_row
@@ -231,10 +207,6 @@ class Game:
         # If the AI is playing, make another move
         if self.__ai_flag and not self.__game_over:
             self.__ai.find_legal_move(self, self.__make_move)
-
-    def get_root(self):
-        """ Getter for root """
-        return self.__gui.get_root()
 
     def get_last_inserted_chip(self):
         """ Getter for last inserted chip """
