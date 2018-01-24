@@ -1,0 +1,72 @@
+RonIt, 311604938, Ron Itzhak
+segalman, 311340350, Amit Segal
+We did not consult anyone in this exercise
+
+==========================================
+Files:
+==========================================
+ai.py               -   Contains the AI logic
+
+board.py            -   Contains the board logic and class, as well as the Cell
+                        class.
+
+board_analyzer.py   -   Contains a class which helpes the AI decide on moves,
+                        using code from ex5
+
+communicator.py     -   A module you supplied for communication
+
+four_in_a_row.py    -   A file the runs the game or prints an error
+
+game.py             -   Contains a class which handles gameplay
+
+GUI.py              -   Contains a class which handles GUI
+
+==========================================
+  Description:
+==========================================
+GUI:
+    From the get go we wanted the game to look realistic, so we made animations
+    and high-rez textures for the assets.
+    Also, to make sure the illegal moves dont happen, we delete buttons that
+    can no longer be pressed
+
+Game:
+    We have not used (only written) most of the functions you asked us to
+    write, and instead made our own (such as find_connected_and_winner)
+
+Cell:
+    Since our GUI consists of one canvas, placing the chips must be done with
+    extreme fidelity, therefore the Cell class contains the exact location in
+    which the chip will be placed.
+
+Board:
+    Contains logic for the board state such as columns and rows, checking legal
+    placements etc.
+
+AI Description:
+    Ultron (the ai) contains two algorithms: (I) immediate response system to
+    victory situations and threats made by the rival player,
+    and (II) ranking system which looks 3 moves ahead and
+    ranks every possible scenario.
+
+    (I):
+        The algorithm first scans the board for all possible sequences of
+        3 chips owned by the AI. For each such sequence, it finds the column
+        in which to place the final chip in order to win the game.
+        After compiling a list of all such locations, it checks if putting a
+        chip in said column will win the game for Ultron (if the chip falls in
+        the proper row needed to win).
+
+        Also, all possible sequences of 3 chips owned by the rival player so
+        that the AI can block immediate threats, and then for all possible
+        sequences of 2 chips owned by the rival.
+
+    (II):
+        Runs only if first algorithm failed to find any columns.
+        The algorithm uses backtrack recursion, with each iteration
+        every possible move to be made by either player is analyzed.
+        Once a move is "made", the board is ranked with a score (scores range
+        by length of sequence made by player (More info can be found in the
+        comment in BoardAnalyzer init)).
+        A special case happens with paths that lead to a loss, they recieve a
+        score of -500 to discourage the AI from taking them.
